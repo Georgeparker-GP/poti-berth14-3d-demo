@@ -55043,7 +55043,7 @@ const BREAKWATER_ARC=[[70,164],[48,174],[26,182],[-26,190],[-86,184],[-120,168],
 function dryDockShoreLights(root){
  const group=new T.Group();group.name='Dry dock breakwater lighting';root.add(group);
  const curve=new T.CatmullRomCurve3(BREAKWATER_ARC.slice(0,7).reverse().map(p=>new T.Vector3(p[0],0,p[1])),false,'catmullrom',.35);
- for(let i=0;i<9;i++){const p=curve.getPointAt(.09+i*.105),dx=-28-p.x,dz=128-p.z,len=Math.hypot(dx,dz),nx=dx/len,nz=dz/len;
+ for(let i=0;i<9;i++){const p=curve.getPointAt(.09+i*.105),dx=-28-p.x,dz=136-p.z,len=Math.hypot(dx,dz),nx=dx/len,nz=dz/len;
   const lamp=new T.Group();lamp.name='Dock-facing shore lamp';lamp.position.set(p.x,1.7,p.z);group.add(lamp);
   cylinder(lamp,0,.2,0,.4,.4,'#626c6e');beam(lamp,[0,0,0],[0,9,0],.15,'#718083');beam(lamp,[0,8.6,0],[nx*2.3,9.2,nz*2.3],.1,'#718083');
   const head=box(lamp,nx*2.3,9.1,nz*2.3,.9,.35,1.5,'#303a3f');head.rotation.y=Math.atan2(nx,nz);
@@ -55153,7 +55153,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
   breakwater(root,pts.slice(0,j+1).reverse());}
  // Short south breakwater off the mole head: forms the narrow entrance channel with the west breakwater.
  
- dryDock(root,-28,128,'DRY DOCK');label(root,'DRY DOCK',-28,9,128,16,'#294c50');
+ dryDock(root,-28,136,'DRY DOCK');label(root,'DRY DOCK',-28,9,136,16,'#294c50');
  yachtClub(root); // Terminal boundary fence along the rail line, with the opening at Gate 1.
  meshFence(root,76,62,236,62,[10,34]);
  // Chain-link fence along the south side of the land road, from the pier corner to the far end.
