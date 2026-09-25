@@ -55408,7 +55408,9 @@ const inSpan=(s,c,back,fwd,L)=>mod(s-(c-back),L)<=back+fwd;
 function vehicleFootprint(t,s,truck){const cfg=truck?TRUCK:TT,pos=truck?truckPosition:tractorPosition,q=pos(s,t.rsSlot),k=pos(s-cfg.kingpin,t.rsSlot),r=pos(s-cfg.axle,t.rsSlot),a=Math.atan2(-(k[1]-r[1]),k[0]-r[0]),off=truck?5.7:5.2;
  return [[q[0],q[1],q[2],3.1,1.65],[k[0]-Math.cos(a)*off,k[1]+Math.sin(a)*off,a,truck?6.8:5.8,1.65]];}
 function footprintsOverlap(a,b){for(const r of [a,b])for(const t of [r[2],r[2]+Math.PI/2]){const ux=Math.cos(t),uz=-Math.sin(t),d=Math.abs((a[0]-b[0])*ux+(a[1]-b[1])*uz),rad=v=>v[3]*Math.abs(Math.cos(v[2])*ux-Math.sin(v[2])*uz)+v[4]*Math.abs(Math.sin(v[2])*ux+Math.cos(v[2])*uz);if(d>=rad(a)+rad(b))return false;}return true;}
-function truckClearance(t,s,tractors){const truck=vehicleFootprint(t,s,true);return !truck.some(a=>footprintsOverlap(a,[65,8,0,5.3,3.05]))&&!tractors.some(tt=>truck.some(a=>vehicleFootprint(tt,tt.s,false).some(b=>footprintsOverlap(a,b))));}
+function truckClearance(t,s,tractors){const truck=vehicleFootprint(t,s,true);return !truck.some(a=>footprintsOverlap(a,[65,8,0,5.3,3.05]))&&!tractors.some(tt=>{
+ // Stop 0.5 m short of a tractor, so a trailer swinging wide while it changes lanes still clears the truck's cab.
+ for(const b of vehicleFootprint(tt,tt.s,false)){const w=[b[0],b[1],b[2],b[3]+.5,b[4]+.5];if(truck.some(a=>footprintsOverlap(a,w)))return true;}return false;});}
 function advanceTrucks(list,dt,gate,tractors=[]){const L=TRUCK_ROUTE.length,out=(list||initialTrucks()).map(t=>({...t}));if(dt<=0)return out;
  let busyIn=out.some(t=>inSpan(t.s,CROSS_IN,9.9,25,L)),busyOut=out.some(t=>inSpan(t.s,CROSS_OUT,9.9,25,L));
  const loadedApproaching=out.some(t=>t.loaded&&(t.rsSlot===undefined||t.s>KM.rs+20)&&inSpan(t.s,CROSS_OUT,65,25,L));
