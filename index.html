@@ -54301,11 +54301,17 @@ function roroDioskuria(){
  box(g,-39,9,0,.65,6.8,9,'#344452');for(const z of [-4,4])beam(g,[-39,6,z],[-32,12,z],.07,'#b5c0be');
  beam(g,[25,19.2,0],[25,27.4,0],.12,white);
  // Bulgarian ensign on the aft mast: white, green, red.
- {const bc=document.createElement('canvas');bc.width=300;bc.height=180;const bq=bc.getContext('2d');[['#ffffff',0],['#00966e',60],['#d62612',120]].forEach(([c,y])=>{bq.fillStyle=c;bq.fillRect(0,y,300,60);});
-  const bt=new T.CanvasTexture(bc);bt.colorSpace=T.SRGBColorSpace;const bg=new T.Mesh(new T.PlaneGeometry(4.5,2.7,16,8),new T.MeshStandardMaterial({map:bt,side:T.DoubleSide,roughness:.85}));bg.name='Bulgarian flag';bg.position.set(27.25,25.9,0);bg.userData.flag=true;g.add(bg);}
+ shipFlag(g,25,27.2,'Bulgarian flag',.6,(q,W,H)=>[['#ffffff',0],['#00966e',1],['#d62612',2]].forEach(([c,k])=>{q.fillStyle=c;q.fillRect(0,k*H/3,W,H/3+1);}));
  for(const z of [-6.3,6.3]){box(g,26,19.3,z,.4,.25,.35,lampHead);glow(g,26,19.4,z,2);}
  return g;
 }
+// Ship ensign: a waving cloth hoisted on a pole at (poleX, top). All ship flags share one world size
+// (3.375 m wide); pass the ship's scale so a scaled model still flies a full-size flag.
+const FLAG_W=3.375;
+function shipFlag(g,poleX,top,name,ratio,draw,scale=1){const w=FLAG_W/scale,h=w*ratio,cv=document.createElement('canvas');cv.width=300;cv.height=Math.round(300*ratio);draw(cv.getContext('2d'),cv.width,cv.height);
+ const tx=new T.CanvasTexture(cv);tx.colorSpace=T.SRGBColorSpace;const f=new T.Mesh(new T.PlaneGeometry(w,h,16,8),new T.MeshStandardMaterial({map:tx,side:T.DoubleSide,roughness:.85}));
+ f.name=name;f.position.set(poleX+w/2,top-h/2,0);f.userData.flag=true;f.userData.hw=w/2;g.add(f);return f;}
+function star(q,cx,cy,R,color){q.beginPath();for(let j=0;j<10;j++){const a=-Math.PI/2+j*Math.PI/5,r=j%2?R*.4:R;j?q.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r):q.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}q.closePath();q.fillStyle=color;q.fill();}
 function vessel(color,scale=1,kind='green'){
  const g=new T.Group();g.name='vessel';g.userData.kind='vessel';g.userData.cargo={};g.scale.setScalar(scale);
  const hull=mesh(g,hullGeometry(),mat(color,.35,.48));hull.material.side=T.DoubleSide;
@@ -54320,12 +54326,14 @@ function vessel(color,scale=1,kind='green'){
  for(let x=-45;x<-34;x+=1.35)for(const z of [-8.55,8.55])box(g,x,20.8,z,1.05,1.15,.08,'#1a3e49');for(let z=-7.5;z<8;z+=1.5)box(g,-33.45,20.8,z,.08,1.15,1.1,'#1a3e49');
  box(g,-45,23.5,1,3,5,4,kind==='maersk'?'#47a8d8':'#2d3c39');if(kind==='maersk'){const sc=document.createElement('canvas');sc.width=sc.height=128;const sq=sc.getContext('2d');sq.fillStyle='#fff';sq.beginPath();for(let i=0;i<14;i++){const r=i%2?22:56,an=-Math.PI/2+i*Math.PI/7;sq.lineTo(64+r*Math.cos(an),64+r*Math.sin(an));}sq.fill();const st=new T.CanvasTexture(sc);st.colorSpace=T.SRGBColorSpace;for(const sd of [-1,1]){const pl=mesh(g,new T.PlaneGeometry(2.4,2.4),new T.MeshBasicMaterial({map:st,transparent:true,depthWrite:false}),-45,24,1+sd*2.03);if(sd<0)pl.rotation.y=Math.PI;}}box(g,-45,26.2,1,3.2,.7,4.2,'#172123');
  beam(g,[-38,21.8,0],[-38,31,0],.15,'#e4e5dc');
- const fc=document.createElement('canvas');fc.width=360;fc.height=240;const fq=fc.getContext('2d');fq.fillStyle='#009e49';fq.fillRect(0,0,360,240);fq.fillStyle='#ce1126';fq.beginPath();fq.moveTo(0,240);fq.lineTo(360,0);fq.lineTo(360,240);fq.fill();fq.strokeStyle='#fcd116';fq.lineWidth=78;fq.beginPath();fq.moveTo(-30,260);fq.lineTo(390,-20);fq.stroke();fq.strokeStyle='#101010';fq.lineWidth=54;fq.stroke();
- for(const [sx,sy] of [[113,165],[247,75]]){fq.beginPath();for(let j=0;j<10;j++){const a=-Math.PI/2+j*Math.PI/5,r=j%2?8:20;const x=sx+Math.cos(a)*r,y=sy+Math.sin(a)*r;j?fq.lineTo(x,y):fq.moveTo(x,y);}fq.closePath();fq.fillStyle='white';fq.fill();}
- const ft=new T.CanvasTexture(fc);ft.colorSpace=T.SRGBColorSpace;const flag=new T.Mesh(new T.PlaneGeometry(4.5,3,16,8),new T.MeshStandardMaterial({map:ft,side:T.DoubleSide,roughness:.85}));flag.name='Saint Kitts and Nevis flag';flag.position.set(-35.75,29.1,0);flag.userData.flag=true;g.add(flag);
+ shipFlag(g,-38,30.6,'Saint Kitts and Nevis flag',2/3,(fq,W,H)=>{fq.fillStyle='#009e49';fq.fillRect(0,0,W,H);fq.fillStyle='#ce1126';fq.beginPath();fq.moveTo(0,H);fq.lineTo(W,0);fq.lineTo(W,H);fq.fill();
+  const k=W/360;fq.lineWidth=78*k;fq.strokeStyle='#fcd116';fq.beginPath();fq.moveTo(-30*k,H+20*k);fq.lineTo(W+30*k,-20*k);fq.stroke();fq.strokeStyle='#101010';fq.lineWidth=54*k;fq.stroke();
+  for(const [sx,sy] of [[113,165],[247,75]])star(fq,sx*k,sy*k,20*k,'#fff');});
 
  for(const z of [-6.7,6.7]){const lifeboat=mesh(g,new T.SphereGeometry(1,12,8),mat('#ed7637'),-42,11,z);lifeboat.scale.set(2.8,1.1,1.1);}
- beam(g,[43,7,0],[43,16,0],.12,'#c5d5ce');beam(g,[41,14,0],[45,14,0],.08,'#dae0d7');
+ if(kind==='maersk'){// Ship's name in white on both bow flanks, laid on the hull side (z = 8 - 0.05 (x - 22)).
+  const nc=document.createElement('canvas');nc.width=512;nc.height=96;const nq=nc.getContext('2d');nq.font='bold 76px sans-serif';nq.textAlign='center';nq.fillStyle='#fff';nq.fillText('CLAIRE A',256,78);
+  const nt=new T.CanvasTexture(nc);nt.colorSpace=T.SRGBColorSpace;for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(7,1.3),new T.MeshBasicMaterial({map:nt,transparent:true,depthWrite:false}),31.5,4.3,sd*(7.525+.03));m.rotation.y=sd>0?.05:Math.PI-.05;m.castShadow=false;}}
  for(const z of [-7.8,7.8]){for(let x=-48;x<=35;x+=3)beam(g,[x,6.8,z],[x,7.7,z],.035,'#bfcac5');beam(g,[-48,7.7,z],[35,7.7,z],.035,'#bfcac5');}
  // Hull lettering as a texture plane on each broadside.
  const c=document.createElement('canvas');c.width=1024;c.height=128;const q=c.getContext('2d');q.font='bold 94px sans-serif';q.textAlign='center';q.fillStyle='#fff';q.fillText(kind==='maersk'?'MAERSK':'COASTAL FEEDER',512,102);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;for(const side of [-1,1]){const m=mesh(g,new T.PlaneGeometry(32,4),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),-5,3.7,side*8.025);if(side<0)m.rotation.y=Math.PI;}
@@ -54378,7 +54386,7 @@ function mobileCrane(x,phase,opt={}){const P=Object.assign({z:66.1,rot:Math.PI,b
  function apply(p){Object.assign(pose,p);turret.rotation.y=pose.psi;boom.rotation.x=pose.a;const endY=15+length*Math.sin(pose.a),endZ=-length*Math.cos(pose.a),rope=Math.max(.2,pose.drop-1.9);for(let i=0;i<2;i++){cables[i].position.set(i? .5:-.5,endY-rope*.5,endZ);cables[i].scale.y=rope;}hook.position.set(0,endY-pose.drop,endZ);hook.rotation.y=-pose.psi;}
  // Pose that puts the spreader centre at world (x, y, z) with the spreader aligned to world x.
  function poseFor(x,z,y){const wx=x-g.position.x,wz=z-g.position.z,ry=-g.rotation.y,dx=wx*Math.cos(ry)+wz*Math.sin(ry),dz=-wx*Math.sin(ry)+wz*Math.cos(ry),R=Math.min(length*.999,Math.hypot(dx,dz)),a=Math.acos(R/length);return {psi:Math.atan2(-dx,-dz),a,drop:2.5+15+length*Math.sin(a)-y};}
- function update(clock){const t=clock*.186+phase;apply({psi:Math.sin(t)*.65,a:.72+Math.sin(t*.8)*.08,drop:9+(1+Math.sin(t*1.5))*4});}
+ function update(clock){const t=clock*.1674+phase;apply({psi:Math.sin(t)*.65,a:.72+Math.sin(t*.8)*.08,drop:9+(1+Math.sin(t*1.5))*4});}
  update(0);return {group:g,update,apply,poseFor,pose,carry,boom};
 }
 function church(){const g=new T.Group();g.position.set(90,0,-6);g.userData.kind='church';const cream='#ead9b8',trim='#c4a675';box(g,0,.25,0,10,.5,9,'#798784');box(g,0,4,0,7.5,7.5,6.5,cream);
@@ -54610,6 +54618,7 @@ function tanker(){const g=new T.Group();g.userData.kind='tanker';safetyLettering
  for(let y=9;y<17;y+=2.5)for(const z of [-6.55,6.55])for(let x=-46;x<-40;x+=1.6)box(g,x,y,z,.8,.8,.08,'#2a3e48');
  for(let z=-7.5;z<8;z+=1.4)box(g,-38.4,18,z,.08,.9,1,'#2a3e48');
  box(g,-46,21.5,0,2.6,4,3,'#f1f1ec');box(g,-46,23.8,0,2.8,.8,3.2,'#e0592b');beam(g,[-41,19,0],[-41,27,0],.12,'#f1f1ec');
+ shipFlag(g,-41,26.8,'Panama flag',2/3,(q,W,H)=>{q.fillStyle='#fff';q.fillRect(0,0,W,H);q.fillStyle='#da121a';q.fillRect(W/2,0,W/2,H/2);q.fillStyle='#072357';q.fillRect(0,H/2,W/2,H/2);star(q,W/4,H/4,H*.16,'#072357');star(q,W*.75,H*.75,H*.16,'#da121a');});
  for(const z of [-7,7]){const lb=mesh(g,new T.SphereGeometry(1,12,8),mat('#ed7637'),-40,10,z);lb.scale.set(2.4,1,1);}
  return g;}
 // Bulk carrier after the photo: black hull, red bottom, grey hatch covers, four white deck cranes.
@@ -54625,6 +54634,12 @@ function bulkVessel(scale){const g=new T.Group();g.name='vessel';g.userData.kind
  for(let z=-7.5;z<8;z+=1.4)box(g,-38.4,18,z,.08,.9,1,'#2a3e48');
  box(g,-46,21.8,0,2.6,4.6,3,'#f4f4f0');box(g,-46,24.3,0,2.8,.7,3.2,'#1c1f26');box(g,-46,23.2,0,2.7,.5,3.1,'#c0392b');
  for(const z of [-7,7]){const lb=mesh(g,new T.SphereGeometry(1,12,8),mat('#ed7637'),-40,11,z);lb.scale.set(2.4,1,1);}
+ // Signal mast on the wheelhouse roof flying the Barbados ensign (sized in world metres whatever the model scale).
+ {const top=19.15+7.5/scale;beam(g,[-41,19.15,0],[-41,top,0],.12/scale,'#f4f4f0');
+  shipFlag(g,-41,top-.2/scale,'Barbados flag',2/3,(q,W,H)=>{q.fillStyle='#00267f';q.fillRect(0,0,W,H);q.fillStyle='#ffc726';q.fillRect(W/3,0,W/3,H);
+   q.fillStyle='#000';const cx=W/2,u=W/100;q.fillRect(cx-2*u,H*.2,4*u,H*.62);
+   q.beginPath();q.moveTo(cx-13*u,H*.22);q.lineTo(cx-9*u,H*.22);q.lineTo(cx-8*u,H*.44);q.lineTo(cx+8*u,H*.44);q.lineTo(cx+9*u,H*.22);q.lineTo(cx+13*u,H*.22);q.lineTo(cx+10*u,H*.52);q.lineTo(cx-10*u,H*.52);q.closePath();q.fill();
+   q.beginPath();q.moveTo(cx,H*.13);q.lineTo(cx-4*u,H*.24);q.lineTo(cx+4*u,H*.24);q.closePath();q.fill();},scale);}
  
  const c=document.createElement('canvas');c.width=1024;c.height=128;const q=c.getContext('2d');q.font='bold 90px sans-serif';q.textAlign='center';q.fillStyle='#fff';q.fillText('POTI BULK',512,100);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;
  for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(26,3.3),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),20,4.4,sd*8.03);if(sd<0)m.rotation.y=Math.PI;}
@@ -55066,7 +55081,9 @@ function concreteBarrier(root,x,z,rot){
 // Barrier lines, evenly spaced: along the south edge of the truck lane on the pier, across the pier's east end
 // north of the land road, and across the west end of the empty container yard beside the MSC stacks.
 function barrierLines(root){
- for(const x of [42.5,46,49.5,53])concreteBarrier(root,x,9.3,0);
+ for(let k=0;k<6;k++)concreteBarrier(root,42.5+k*3.24,9.3,0); // ends just short of the kiosk at x = 59.8
+ // Short return at the west end, down to the quay edge.
+ for(const z of [7.1,4.8])concreteBarrier(root,41.6,z,Math.PI/2);
  for(let k=0;k<5;k++)concreteBarrier(root,69.6,34.8+k*2.5,Math.PI/2);
  for(let k=0;k<3;k++)concreteBarrier(root,111.2,33.85+k*2.9,Math.PI/2);
 }
@@ -55275,8 +55292,8 @@ const TT=Object.freeze({speed:7.704,gap:19,count:6,kingpin:2.1,trailerCenter:7.3
 const TT_ROUTE=makePath((line,arc)=>{const h=Math.PI/2,P=Math.PI;arc(-27,56.1,3,-3*h,-P);line(-30,56.1,-30,25);arc(-27,25,3,-P,-h);line(-27,22,37,22);arc(37,25,3,-h,0);line(40,25,40,56.1);arc(37,56.1,3,0,h);line(37,59.1,-27,59.1);});
 const TT_SIDE=31.1,TT_TOP=4*1.5*Math.PI+TT_SIDE+64+TT_SIDE,TT_UP=3*1.5*Math.PI+TT_SIDE+64;
 // Crane handling sequence (seconds after the tractor stops). Poses: 'ship'/'tt', high = lifted clear.
-// Crane timeline units per second (7 % slower than the earlier .5712).
-const CRANE_RATE=.5312;
+// Crane timeline units per second (.5712 slowed by 7 %, then by another 10 %).
+const CRANE_RATE=.4781;
 const CRANE_SEQ=Object.freeze({keys:[[0,'start'],[3.5,'shipHigh'],[6,'shipLow'],[6.5,'shipLow'],[8.5,'shipHigh'],[13.5,'ttHigh'],[16,'ttLow'],[16.5,'ttLow'],[18.5,'ttHigh']],grab:6.3,release:16.3,total:18.5});
 // Crane positions (x) and where each crane puts the box: trailer centre x on the quay-side lane.
 const CRANES=Object.freeze([{x:-33,drop:-19.5},{x:-8,drop:1},{x:24,drop:33}]);
@@ -55616,7 +55633,7 @@ function updateWalkers(t){const W=model.walkers;if(!W)return;const L=WALK.len;
  const wet=(Number(weather.precip)||0)>0;parts.umbrella.visible=wet;
  if(wet){parts.arms[0].rotation.z=.95;parts.phone.visible=false;parts.flash.visible=false;parts.arms[1].rotation.z=swing*.5;}
  });}
-function updateModel(){for(const f of shipFlags){const p=f.geometry.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i);p.setZ(i,Math.sin(x*2.3-motion.time*3)*.16*(x+2.25)/4.5);}p.needsUpdate=true;f.geometry.computeVertexNormals();}anemometers.forEach(o=>o.rotation.y=motion.time*Math.max(.3,(weather.wind||0)*.3));for(const palm of model.palms)palm.userData.update(motion.time,weather,paused?0:lastDt);const dp=PotiOps.dredgerPosition(motion.dredgerProgress);model.dredger.position.set(dp[0],0,dp[1]);model.dredger.rotation.y=dp[2];const t=motion.time,p=PotiOps.vesselPosition(motion.vesselProgress);const sea=weather.wave||0;
+function updateModel(){for(const f of shipFlags){const p=f.geometry.attributes.position,hw=f.userData.hw||2.25;for(let i=0;i<p.count;i++){const x=p.getX(i);p.setZ(i,Math.sin(x*2.3-motion.time*3)*.16*(x+hw)/(2*hw));}p.needsUpdate=true;f.geometry.computeVertexNormals();}anemometers.forEach(o=>o.rotation.y=motion.time*Math.max(.3,(weather.wind||0)*.3));for(const palm of model.palms)palm.userData.update(motion.time,weather,paused?0:lastDt);const dp=PotiOps.dredgerPosition(motion.dredgerProgress);model.dredger.position.set(dp[0],0,dp[1]);model.dredger.rotation.y=dp[2];const t=motion.time,p=PotiOps.vesselPosition(motion.vesselProgress);const sea=weather.wave||0;
  model.moving.position.set(p[0],Math.sin(t*.6)*sea*.16,p[1]);model.moving.rotation.y=p[2];
  model.moving.rotation.z=Math.sin(t*.52)*sea*.018;model.moving.rotation.x=Math.sin(t*.73)*sea*.012;
  model.moored.position.y=Math.sin(t*.5)*sea*.07;model.moored.rotation.x=Math.sin(t*.4)*sea*.006;model.moored.rotation.z=Math.sin(t*.46+1)*sea*.004;
