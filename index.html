@@ -54299,7 +54299,10 @@ function roroDioskuria(){
  box(g,-20,14,0,6,5,6,blue);box(g,-20,16.7,0,6.3,.6,6.3,'#262c30');box(g,-20,12,0,6.1,.65,6.1,'#cc6255');
  for(const z of [-2,0,2])cylinder(g,-20,18,z,.42,2.5,'#242b2e');
  box(g,-39,9,0,.65,6.8,9,'#344452');for(const z of [-4,4])beam(g,[-39,6,z],[-32,12,z],.07,'#b5c0be');
- beam(g,[25,19.2,0],[25,27,0],.12,white);beam(g,[25,24,-2],[25,24,2],.08,white);
+ beam(g,[25,19.2,0],[25,27.4,0],.12,white);
+ // Bulgarian ensign on the aft mast: white, green, red.
+ {const bc=document.createElement('canvas');bc.width=300;bc.height=180;const bq=bc.getContext('2d');[['#ffffff',0],['#00966e',60],['#d62612',120]].forEach(([c,y])=>{bq.fillStyle=c;bq.fillRect(0,y,300,60);});
+  const bt=new T.CanvasTexture(bc);bt.colorSpace=T.SRGBColorSpace;const bg=new T.Mesh(new T.PlaneGeometry(4.5,2.7,16,8),new T.MeshStandardMaterial({map:bt,side:T.DoubleSide,roughness:.85}));bg.name='Bulgarian flag';bg.position.set(27.25,25.9,0);bg.userData.flag=true;g.add(bg);}
  for(const z of [-6.3,6.3]){box(g,26,19.3,z,.4,.25,.35,lampHead);glow(g,26,19.4,z,2);}
  return g;
 }
@@ -55034,9 +55037,12 @@ function fence(g,x0,x1,z0,z1,gate){const c='#5b625f';const posts=[];
 // Layout: pier z 3.5..70.6 (widened 10 % to the north so the quay lane clears the truck turn). Berth 14 (Maersk + cranes)
 // on the north edge (z = 70.6), Berth 12 on the south edge (z = 3.5).
 // Land link east of x = 70: two-way road (z 9..31), empty container yard (z 33..55), railway (z 59). B15 juts north from the land.
+// Outer breakwater as one smooth arc from the north head (70,164) round the dry dock basin to the west head (-52,-182).
+// The west arm bows out to x ≈ -160 so the channel off the Berth 12/14 pier head is about 90 m wide.
+const BREAKWATER_ARC=[[70,164],[48,174],[26,182],[-26,190],[-86,184],[-120,168],[-146,142],[-159,104],[-162,62],[-156,20],[-139,-20],[-116,-60],[-92,-118],[-60,-168],[-52,-182]];
 function dryDockShoreLights(root){
  const group=new T.Group();group.name='Dry dock breakwater lighting';root.add(group);
- const curve=new T.CatmullRomCurve3([[-124,125],[-118,164],[-86,184],[-26,190],[26,182],[48,174],[70,164]].map(p=>new T.Vector3(p[0],0,p[1])),false,'catmullrom',.35);
+ const curve=new T.CatmullRomCurve3(BREAKWATER_ARC.slice(0,7).reverse().map(p=>new T.Vector3(p[0],0,p[1])),false,'catmullrom',.35);
  for(let i=0;i<9;i++){const p=curve.getPointAt(.09+i*.105),dx=-28-p.x,dz=128-p.z,len=Math.hypot(dx,dz),nx=dx/len,nz=dz/len;
   const lamp=new T.Group();lamp.name='Dock-facing shore lamp';lamp.position.set(p.x,1.7,p.z);group.add(lamp);
   cylinder(lamp,0,.2,0,.4,.4,'#626c6e');beam(lamp,[0,0,0],[0,9,0],.15,'#718083');beam(lamp,[0,8.6,0],[nx*2.3,9.2,nz*2.3],.1,'#718083');
@@ -55045,6 +55051,24 @@ function dryDockShoreLights(root){
   const pool=new T.Mesh(new T.PlaneGeometry(17,25),poolMat);pool.rotation.x=-Math.PI/2;pool.rotation.z=-Math.atan2(nx,nz);pool.position.set(nx*7,.05,nz*7);pool.visible=false;pool.renderOrder=2;lamp.add(pool);pools.push(pool);
   if(i%3===1){const spot=new T.SpotLight('#fff0d0',140,130,.65,.8,1);spot.position.set(nx*2.3,8.8,nz*2.3);const target=new T.Object3D();target.position.set(dx,-1,dz);lamp.add(target);spot.target=target;spot.castShadow=false;spot.visible=false;lamp.add(spot);gardenLights.push(spot);}
  }
+}
+// Concrete road barrier after the photo: 2 m block, yellow half and black half, wide foot with fork slots,
+// tapered sides and a lifting loop on top of each half.
+let barrierGeo=null;
+function concreteBarrier(root,x,z,rot){
+ if(!barrierGeo){const sh=new T.Shape();[[-.36,0],[.36,0],[.36,.22],[.25,.6],[.23,.95],[-.23,.95],[-.25,.6],[-.36,.22]].forEach(([u,v],i)=>i?sh.lineTo(u,v):sh.moveTo(u,v));
+  barrierGeo=new T.ExtrudeGeometry(sh,{depth:1,bevelEnabled:false});barrierGeo.translate(0,0,-.5);barrierGeo.computeVertexNormals();}
+ const g=new T.Group();g.name='Concrete barrier';g.position.set(x,0,z);g.rotation.y=rot;root.add(g);
+ [['#efbb12',-.5],['#1c2024',.5]].forEach(([c,lx])=>{const m=mesh(g,barrierGeo,mat(c,0,.9),lx,0,0);m.rotation.y=Math.PI/2;
+  box(g,lx,.07,0,.34,.14,.74,'#15181a');
+  beam(g,[lx-.12,.95,0],[lx-.12,1.13,0],.035,c==='#1c2024'?'#4a5258':'#d9a90f');beam(g,[lx+.12,.95,0],[lx+.12,1.13,0],.035,c==='#1c2024'?'#4a5258':'#d9a90f');beam(g,[lx-.12,1.13,0],[lx+.12,1.13,0],.035,c==='#1c2024'?'#4a5258':'#d9a90f');});
+ return g;}
+// Barrier lines, evenly spaced: along the south edge of the truck lane on the pier, across the pier's east end
+// north of the land road, and across the west end of the empty container yard beside the MSC stacks.
+function barrierLines(root){
+ for(const x of [42.5,46,49.5,53])concreteBarrier(root,x,9.3,0);
+ for(let k=0;k<5;k++)concreteBarrier(root,69.6,34.8+k*2.5,Math.PI/2);
+ for(let k=0;k<3;k++)concreteBarrier(root,111.2,33.85+k*2.9,Math.PI/2);
 }
 function yardDetails(root){
  const rs=reachStacker(126,50,false,'#c92d2b');rs.name='Stationary red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=-Math.PI/2;rs.userData.rs.setBoom(4.5,11);root.add(rs);
@@ -55121,9 +55145,12 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const moored=vessel('#3fa9da',1,'maersk');moored.position.set(-8,0,80.1);root.add(moored);
  const moving=bulkVessel(.51);root.add(moving);const dredge=dredger();root.add(dredge);
  // West/south-west breakwater (green line) and the tanker berth south of the land (yellow line).
- breakwater(root,[[-124,125],[-122,40],[-108,-44],[-92,-118],[-60,-168],[-52,-182]]);
- // North breakwater continues from the root of the west one and shelters the dry dock basin.
- breakwater(root,[[-124,125],[-118,164],[-86,184],[-26,190],[26,182],[48,174],[70,164]]);
+ // Both arms are cut from one sampled arc, so they meet at (-146,142) with the same tangent and no visible joint.
+ {const arc=new T.CatmullRomCurve3(BREAKWATER_ARC.map(p=>new T.Vector3(p[0],0,p[1])),false,'catmullrom',.35),n=Math.round(arc.getLength()/6);
+  const pts=arc.getSpacedPoints(n).map(v=>[v.x,v.z]);let j=0;pts.forEach((p,i)=>{if(Math.hypot(p[0]+146,p[1]-142)<Math.hypot(pts[j][0]+146,pts[j][1]-142))j=i;});
+  breakwater(root,pts.slice(j));
+  // North breakwater: from the same joint round the dry dock basin to its head.
+  breakwater(root,pts.slice(0,j+1).reverse());}
  // Short south breakwater off the mole head: forms the narrow entrance channel with the west breakwater.
  
  dryDock(root,-28,128,'DRY DOCK');label(root,'DRY DOCK',-28,9,128,16,'#294c50');
@@ -55139,7 +55166,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const gottwald=mobileCrane(-15,2.2,{z:8,rot:0,base:'#1668b3',cab:'#8f989b',tower:'#9aa3a6',boom:'#7fb9e0',lattice:['#9fd0ea','#6aa8d6','#8cc3e4'],name:'GOTTWALD',tool:'grab'});
  root.add(gottwald.group);cranes.push(gottwald);
  const supervisor=berthSupervisor();root.add(supervisor);
- yardDetails(root);dryDockShoreLights(root);urbanZone(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
+ yardDetails(root);barrierLines(root);dryDockShoreLights(root);urbanZone(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
  flatRackStack(root);const twistlocks=twistlockStation(root);
  const tractors=Array.from({length:6},(_,i)=>{const tractor=terminalTractor(i+1),tr=trailer();root.add(tractor);root.add(tr);return {tractor,trailer:tr,load:tr.userData.load};});
  const tugs=[tugBoat(),tugBoat()];tugs.forEach(t=>{t.scale.setScalar(.85);root.add(t);});
@@ -55314,8 +55341,8 @@ const TRUCK_ROUTE=makePath((rawLine,rawArc)=>{const h=Math.PI/2,P=Math.PI;let di
  let last=[120,100];for(let i=1;i<=30;i++){const t=i/30,u=1-t,p=[u*u*u*120+3*u*u*t*91+3*u*t*t*122+t*t*t*110,u*u*u*100+3*u*u*t*100+3*u*t*t*74+t*t*t*67];line(...last,...p);last=p;}
  KM.gate=dist;line(110,67,92.1,56.67);arc(96.1,49.74,8,2*P/3,P);
  KM.crossIn=dist+24.24;line(88.1,49.74,88.1,22.5);arc(80.1,22.5,8,0,-h);
- KM.enter=dist+32.1;line(80.1,14.5,43,14.5);arc(43,17.5,3,-h,-P);
- KM.rs=dist+27.8;line(40,17.5,40,49);arc(44,49,4,P,h);KM.exit=dist+14;line(44,53,70,53);arc(70,49,4,h,0);
+ KM.enter=dist+14;line(80.1,14.5,43,14.5);arc(43,17.5,3,-h,-P);
+ KM.rs=dist+27.8;line(40,17.5,40,49);arc(44,49,4,P,h);KM.exit=dist+24;line(44,53,70,53);arc(70,49,4,h,0);
  line(74,49,74,29.5);arc(78,29.5,4,P,1.5*P);KM.crossOut=dist+10.1;line(78,25.5,242,25.5);arc(242,33.5,8,-h,0);
  KM.unload=dist+30;line(250,33.5,250,90);arc(240,90,10,0,h);
 });
@@ -55361,11 +55388,12 @@ function laneGates(state){const rs=state.reach||initialReach(),TL=TT_ROUTE.lengt
  const reserve=(t,kind)=>{if(kind==='tt'&&kind!==type)return false;if(kind==='tt'&&tt.some(v=>v.rsSlot!==undefined&&v.s<TT_STOPS[3].s-2))return false;const k=rs.units.findIndex((u,k)=>kind==='truck'?(!truckSlots.has(k)&&!tt.some(v=>v.rsSlot===k&&v.s<TT_STOPS[3].s+3)&&u.holding&&u.phase==='idle'):(!used.has(k)&&u.phase==='idle'&&!u.holding));if(k<0)return false;t.pendingSlot=k;return true;};
  const enter=(t,kind)=>{t.rsSlot=t.pendingSlot;delete t.pendingSlot;t.parallel=true;used.add(t.rsSlot);if(kind==='truck')truckSlots.add(t.rsSlot);t.zoneEnd=kind==='tt'?TT_ZONE.exit:TRUCK_ZONE.exit;t.mergeAt=(kind==='tt'?TT_STOPS[3].s:KM.rs)+.5;};
  return {tt:{s:TT_ZONE.enter,open:t=>reserve(t,'tt'),entered:t=>enter(t,'tt')},truck:[{s:PARKING_S,open:()=>true},{s:TRUCK_ZONE.enter,open:t=>reserve(t,'truck'),entered:t=>enter(t,'truck')}]};}
-function pocketPosition(route,s,slot,enter,exit){const L=route.length,q=route.at(mod(s,L));if(slot===undefined)return q;const d=mod(s-enter,L),len=mod(exit-enter,L);if(d>len)return q;
- const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};const offset=v=>6*(slot?1:-1)*smooth(v/9)*smooth((len-v)/13);q[0]+=offset(d);const r=route.at(mod(s+.1,L));q[2]=Math.atan2(-(r[1]-q[1]),r[0]+offset(d+.1)-q[0]);return q;}
-function truckPosition(s,slot){return pocketPosition(TRUCK_ROUTE,s,slot,TRUCK_ZONE.enter,TRUCK_ZONE.exit-19);}
+// rin/rout: ramp lengths into and out of the pocket; long ramps keep the apparent speed steady where the offset runs along the lane.
+function pocketPosition(route,s,slot,enter,exit,rin=9,rout=13){const L=route.length,q=route.at(mod(s,L));if(slot===undefined)return q;const d=mod(s-enter,L),len=mod(exit-enter,L);if(d>len)return q;
+ const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};const offset=v=>6*(slot?1:-1)*smooth(v/rin)*smooth((len-v)/rout);q[0]+=offset(d);const r=route.at(mod(s+.1,L));q[2]=Math.atan2(-(r[1]-q[1]),r[0]+offset(d+.1)-q[0]);return q;}
+function truckPosition(s,slot){return pocketPosition(TRUCK_ROUTE,s,slot,TRUCK_ZONE.enter,TRUCK_ZONE.exit-19,20,22);}
 // The pocket closes before the quay lane (TT_TOP), so a tractor parked under crane 2 sits exactly under the drop point.
-function tractorPosition(s,slot){return pocketPosition(TT_ROUTE,s,slot,TT_ZONE.enter+10,TT_TOP-1.5);}
+function tractorPosition(s,slot){return pocketPosition(TT_ROUTE,s,slot,TT_ZONE.enter+10,TT_TOP-1.5,14,13);}
 // Point on the vessel route; beyond either end it continues straight (used for the tugs).
 function routePoint(d){const L=ROUTE.length;if(d>=0&&d<=L)return ROUTE.at(d);const e=ROUTE.at(d<0?0:L),k=d<0?d:d-L;return [e[0]+Math.cos(e[2])*k,e[1]-Math.sin(e[2])*k,e[2]];}
 function vesselPosition(progress){const departure=1+CYCLE.dwell/CYCLE.run;if(progress<=departure)return ROUTE.at(Math.max(0,Math.min(1,progress))*ROUTE.length);return OUTBOUND.at(Math.min(OUTBOUND.length,(progress-departure)*ROUTE.length));}
