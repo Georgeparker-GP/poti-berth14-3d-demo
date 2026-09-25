@@ -54794,19 +54794,14 @@ function dryDockCrew(dock){const S=1.17,crew=new T.Group();crew.name='Dry dock c
   for(const w of welders){const on=Math.sin(t*.35+w.ph)>-.35,fl=on?.6+Math.random()*.4:0;w.arc.visible=on;w.arc.scale.setScalar(.5+fl*.6);w.light.intensity=fl*14;
    const P=w.sparks.geometry.attributes.position;for(let k=0;k<w.vel.length;k++){const v=w.vel[k];v[3]+=dt;if(v[3]>.9){if(!on){P.setXYZ(k,0,-50,0);continue;}v[0]=(Math.random()-.5)*3;v[1]=Math.random()*2.5;v[2]=(Math.random()-.5)*3;v[3]=Math.random()*.3;P.setXYZ(k,w.tip.x,w.tip.y,w.tip.z);}
     else{v[1]-=9.8*dt;let x=P.getX(k)+v[0]*dt,y=P.getY(k)+v[1]*dt,z=P.getZ(k)+v[2]*dt;if(y<w.floor){y=w.floor;v[1]*=-.25;v[0]*=.5;v[2]*=.5;}P.setXYZ(k,x,y,z);}}P.needsUpdate=true;}}};}
-// Floating crane KHIBULA (after the photo): black pontoon ringed with tyre fenders and a red deck edge, blue two-deck
-// house with stairs aft, a slewing blue cab on a pedestal tower, lattice boom luffed out with hook, a loader on deck.
-function floatingCrane(root,x,z,rot){const g=new T.Group();g.name='KHIBULA';g.userData.kind='floating-crane';g.position.set(x,0,z);g.rotation.y=rot;root.add(g);
+// Floating crane KHIBULA (after the photo, 73 % scale, open deck): black pontoon ringed with tyre fenders and a red deck
+// edge, a slewing blue cab on a pedestal tower and a lattice boom luffed out with its hook.
+function floatingCrane(root,x,z,rot){const g=new T.Group();g.name='KHIBULA';g.userData.kind='floating-crane';g.position.set(x,0,z);g.rotation.y=rot;g.scale.setScalar(.73);root.add(g);
  const blue='#1f6fb2',blue2='#2b84c9',dark='#1d2124',red='#a8322b',white='#eef0ec';
  box(g,0,.3,0,40,2.6,14,dark);box(g,0,1.62,0,40.2,.14,14.2,red);box(g,0,1.72,0,39,.1,13,'#6f6a62');
  for(const sd of [-1,1])for(let k=-19;k<=19;k+=2.2){if(k>-.5&&k<8.5)continue;const t=mesh(g,new T.TorusGeometry(.5,.22,6,12),mat('#15181a',0,.9),k,.9,sd*7.2);}
  for(const sx of [-1,1])for(let k=-6;k<=6;k+=2.2)mesh(g,new T.TorusGeometry(.5,.22,6,12),mat('#15181a',0,.9),sx*20.2,.9,k).rotation.y=Math.PI/2;
  for(const sd of [-1,1]){for(let k=-19;k<=19;k+=2)beam(g,[k,1.8,sd*6.6],[k,2.8,sd*6.6],.04,red);beam(g,[-19.5,2.8,sd*6.6],[19.5,2.8,sd*6.6],.04,red);}
- // Accommodation aft: two decks, windows, rails and an outside stair.
- box(g,-12,3.6,0,12,3.6,11,blue);box(g,-12.5,6.9,0,9,3,9,blue2);box(g,-12,5.5,0,12.6,.2,11.6,'#d5dad8');box(g,-12.5,8.5,0,9.6,.2,9.6,'#d5dad8');
- for(const sd of [-1,1])for(let k=-16;k<-7;k+=2){box(g,k,3.9,sd*5.53,1.1,.9,.06,'#1a2b33');if(k>-16.5&&k<-8.5)box(g,k,7.1,sd*4.53,1,.8,.06,'#1a2b33');}
- for(let i=0;i<8;i++)box(g,-5.6-i*.35,2+i*.45,5.2,.35,.08,1.2,'#d5dad8');beam(g,[-5.4,2,5.8],[-8.4,5.6,5.8],.04,white);
- beam(g,[-15,8.6,2],[-15,15,2],.06,'#c9ced0');beam(g,[-15,13.5,1.3],[-15,13.5,2.7],.04,'#c9ced0');
  // Pedestal tower and slewing cab, slewed so the boom points west over open water, away from the dry dock.
  cylinder(g,0,6,0,1.6,8.5,blue);box(g,0,1.9,0,5,.6,5,blue);
  const turret=new T.Group();turret.position.set(0,10.2,0);turret.rotation.y=Math.PI/2;g.add(turret);g.userData.turret=turret;
@@ -54821,16 +54816,13 @@ function floatingCrane(root,x,z,rot){const g=new T.Group();g.name='KHIBULA';g.us
  const tip=new T.Vector3(L+.3,0,0);boom.updateMatrixWorld(true);turret.updateMatrixWorld(true);
  const tipT=tip.clone().applyMatrix4(boom.matrix);beam(turret,[-3.6,6.8,0],[tipT.x,tipT.y,tipT.z],.03,'#2a2a2a');beam(turret,[-3.6,7,.3],[tipT.x,tipT.y,tipT.z+.2],.03,'#2a2a2a');
  beam(turret,[tipT.x,tipT.y,tipT.z],[tipT.x,2.2,tipT.z],.035,'#2a2a2a');box(turret,tipT.x,1.7,tipT.z,.9,1,.7,'#e0a526');mesh(turret,new T.TorusGeometry(.35,.1,6,12,Math.PI*1.4),mat('#3a3a3a'),tipT.x,.9,tipT.z);
- // Wheel loader and a bin forward on deck.
- {const l=new T.Group();l.position.set(12,1.8,-1.5);l.rotation.y=Math.PI;g.add(l);box(l,0,1.2,0,3.6,1.3,2,'#e0a526');box(l,-.8,2.5,0,1.6,1.4,1.6,'#e0a526');box(l,-.8,2.6,0,1.5,1,1.65,'#2a3e48');
-  for(const [wx,wz] of [[-1.2,-1.1],[-1.2,1.1],[1.2,-1.1],[1.2,1.1]]){const w=cylinder(l,wx,.75,wz,.75,.5,'#1b1b1b');w.rotation.x=Math.PI/2;}beam(l,[1.6,1.4,-.7],[3.2,1,-.7],.12,'#e0a526');beam(l,[1.6,1.4,.7],[3.2,1,.7],.12,'#e0a526');box(l,3.5,.7,0,.8,1,2.4,'#6d6d6d');}
  box(g,16,2.6,3.5,4,1.6,3.5,blue);
  // Name on both flanks (a fender-free panel) and the stern.
  const nc=document.createElement('canvas');nc.width=512;nc.height=96;const nq=nc.getContext('2d');nq.font='bold 78px sans-serif';nq.textAlign='center';nq.fillStyle='#fff';nq.fillText('KHIBULA',256,80);const nt=new T.CanvasTexture(nc);nt.colorSpace=T.SRGBColorSpace;
  for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(7,1.3),new T.MeshBasicMaterial({map:nt,transparent:true,depthWrite:false}),4,.6,sd*7.03);if(sd<0)m.rotation.y=Math.PI;m.castShadow=false;}
  {const m=mesh(g,new T.PlaneGeometry(7,1.3),new T.MeshBasicMaterial({map:nt,transparent:true,depthWrite:false}),-20.03,.6,0);m.rotation.y=-Math.PI/2;m.castShadow=false;}
  return g;}
-function dryDock(root,x,z,name){const g=new T.Group();g.userData.kind='drydock';g.position.set(x,0,z);g.rotation.y=Math.PI/2;g.scale.setScalar(.6);root.add(g);
+function dryDock(root,x,z,name){const g=new T.Group();g.userData.kind='drydock';g.position.set(x,0,z);g.rotation.y=Math.PI/2;g.scale.setScalar(.66);root.add(g);
  {const c=document.createElement('canvas');c.width=1024;c.height=128;const q=c.getContext('2d');q.font='bold 86px "Noto Sans Georgian","BPG Arial",sans-serif';q.textAlign='center';q.fillStyle='#fff';q.fillText(name,512,98);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;
   for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(30,3.75),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),0,2.6,sd*11.03);if(sd<0)m.rotation.y=Math.PI;}}const rust='#a24a2f',dark='#5b2c22';
  box(g,0,-.6,0,72,1.8,22,dark);box(g,0,.32,0,70,.08,15,'#7a6a5c');
@@ -54843,7 +54835,6 @@ function dryDock(root,x,z,name){const g=new T.Group();g.userData.kind='drydock';
  const cx=12,cz=9.5;cylinder(g,cx,7,cz,.9,3.4,'#e8e8e2');box(g,cx,9.2,cz,3,1.6,2.4,'#2f6fb0');box(g,cx+1.2,9.3,cz-1.25,1.2,1,.06,'#2a3e48');
  beam(g,[cx,9.6,cz],[cx+22,24,cz-9],.35,'#2f6fb0');beam(g,[cx-1,10,cz],[cx-1,15,cz],.2,'#2f6fb0');beam(g,[cx-1,15,cz],[cx+22,24,cz-9],.04,'#333');
  beam(g,[cx+22,24,cz-9],[cx+22,12,cz-9],.03,'#333');box(g,cx+22,11.8,cz-9,.8,.5,.8,'#e0a526');
- box(g,-38,.2,0,4,1,4,'#8b918b');for(let k=0;k<5;k++)box(g,-42-k*4.2,.25,0,4,.35,1.8,'#9a8f7e');
  return g;}
 // Buildings behind the yacht club (after the photo): a long red-roofed hall, a white office block and a tall port control tower.
 function revenueSign(g){
@@ -55146,7 +55137,7 @@ const BREAKWATER_ARC=[[70,164],[48,174],[26,182],[-26,190],[-86,184],[-120,168],
 function dryDockShoreLights(root){
  const group=new T.Group();group.name='Dry dock breakwater lighting';root.add(group);
  const curve=new T.CatmullRomCurve3(BREAKWATER_ARC.slice(0,7).reverse().map(p=>new T.Vector3(p[0],0,p[1])),false,'catmullrom',.35);
- for(let i=0;i<9;i++){const p=curve.getPointAt(.09+i*.105),dx=-28-p.x,dz=136-p.z,len=Math.hypot(dx,dz),nx=dx/len,nz=dz/len;
+ for(let i=0;i<9;i++){const p=curve.getPointAt(.09+i*.105),dx=-28-p.x,dz=142-p.z,len=Math.hypot(dx,dz),nx=dx/len,nz=dz/len;
   const lamp=new T.Group();lamp.name='Dock-facing shore lamp';lamp.position.set(p.x,1.7,p.z);group.add(lamp);
   cylinder(lamp,0,.2,0,.4,.4,'#626c6e');beam(lamp,[0,0,0],[0,9,0],.15,'#718083');beam(lamp,[0,8.6,0],[nx*2.3,9.2,nz*2.3],.1,'#718083');
   const head=box(lamp,nx*2.3,9.1,nz*2.3,.9,.35,1.5,'#303a3f');head.rotation.y=Math.atan2(nx,nz);
@@ -55290,8 +55281,8 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
   breakwater(root,pts.slice(0,j+1).reverse());}
  // Short south breakwater off the mole head: forms the narrow entrance channel with the west breakwater.
  
- const dockCrew=dryDockCrew(dryDock(root,-28,136,'DRY DOCK'));
- const khibula=floatingCrane(root,-74,146,Math.PI/2);label(root,'DRY DOCK',-28,9,136,16,'#294c50');
+ const dockCrew=dryDockCrew(dryDock(root,-28,142,'DRY DOCK'));
+ const khibula=floatingCrane(root,-74,146,Math.PI/2);label(root,'DRY DOCK',-28,9.5,142,16,'#294c50');
  yachtClub(root); // Terminal boundary fence along the rail line, with the opening at Gate 1.
  meshFence(root,76,62,236,62,[10,34]);
  // Chain-link fence along the south side of the land road, from the pier corner to the far end.
