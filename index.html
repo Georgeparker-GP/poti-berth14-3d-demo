@@ -54349,7 +54349,7 @@ function clamshellGrab(g){const y='#e8a81c',dark='#1c1f22',steel='#c8862a';
   box(shell,sd*2.35,-1.3,0,.35,.45,3.3,dark);box(shell,sd*.1,-.3,0,.5,1.9,3,'#d79a1b');
   for(const sz of [-1.4,1.4])box(shell,sd*1.1,-.45,sz,2.55,1.75,.12,'#c58f18');}
  return g;}
-function mobileCrane(x,phase,opt={}){const P=Object.assign({z:60,rot:Math.PI,base:'#dda62f',cab:'#7b8586',tower:'#7a8688',boom:'#cbd4d2',lattice:['#e2e4da','#c2cdcd','#ced8d3'],name:'LHM'},opt);
+function mobileCrane(x,phase,opt={}){const P=Object.assign({z:66.1,rot:Math.PI,base:'#dda62f',cab:'#7b8586',tower:'#7a8688',boom:'#cbd4d2',lattice:['#e2e4da','#c2cdcd','#ced8d3'],name:'LHM'},opt);
  const g=new T.Group();g.position.set(x,0,P.z);g.rotation.y=P.rot;g.userData.kind='crane';g.userData.brand=P.name;
  box(g,0,1.2,0,8,1.1,6,'#535e61');
  for(const dx of [-4,4])for(let z=-2.5;z<=2.5;z+=1){const wheel=cylinder(g,dx,.7,z,.65,.45,'#212b2e');wheel.rotation.z=Math.PI/2;}
@@ -54392,7 +54392,7 @@ function church(){const g=new T.Group();g.position.set(90,0,-6);g.userData.kind=
 }
 // Port building from the reference photo: butterfly roof, glazed grid facade, central tower. No lettering.
 // Rotated so the lawn and entrance face the container yard (+x).
-function terminalBuilding(){const g=new T.Group();g.userData.kind='terminal';g.position.set(-51,0,34);g.rotation.y=-Math.PI/2;
+function terminalBuilding(){const g=new T.Group();g.userData.kind='terminal';g.position.set(-51,0,37.05);g.rotation.y=-Math.PI/2;
  const white='#e9ebe6',shade='#c9cdc8',glass=mat('#2c4550',.3,.25),frame='#d9ddd8';
  box(g,0,.1,-9,32,.2,8,'#5f8a4c');box(g,0,.12,-9,4,.2,8,'#b9b8ad');
  // Glazed two-storey body with a dark mullion grid.
@@ -55031,7 +55031,8 @@ function fence(g,x0,x1,z0,z1,gate){const c='#5b625f';const posts=[];
  for(const y of [.55,1.35]){if(gate){box(g,(x0+gate-1.4)/2,y,z0,gate-1.4-x0,.07,.07,c);box(g,(gate+1.4+x1)/2,y,z0,x1-gate-1.4,.07,.07,c);}else box(g,(x0+x1)/2,y,z0,x1-x0,.07,.07,c);box(g,(x0+x1)/2,y,z1,x1-x0,.07,.07,c);box(g,x0,y,(z0+z1)/2,.07,.07,z1-z0,c);box(g,x1,y,(z0+z1)/2,.07,.07,z1-z0,c);}
  for(const s of [-1,1])box(g,gate+s*1.4,.95,z0,.22,1.9,.22,'#3f4543');
 }
-// Layout: pier z 3.5..64.5. Berth 14 (Maersk + cranes) on the north edge (z = 64.5), Berth 12 on the south edge (z = 3.5).
+// Layout: pier z 3.5..70.6 (widened 10 % to the north so the quay lane clears the truck turn). Berth 14 (Maersk + cranes)
+// on the north edge (z = 70.6), Berth 12 on the south edge (z = 3.5).
 // Land link east of x = 70: two-way road (z 9..31), empty container yard (z 33..55), railway (z 59). B15 juts north from the land.
 function dryDockShoreLights(root){
  const group=new T.Group();group.name='Dry dock breakwater lighting';root.add(group);
@@ -55062,8 +55063,8 @@ function yardDetails(root){
  for(const z of [-.5,.5]){beam(person,[0,2.42,z],[.5,2.1,z],.22,'#4b7182');beam(person,[.5,2.1,z],[.82,2.73,z*.6],.19,'#4b7182');mesh(person,new T.SphereGeometry(.13,8,6),skin,.82,2.73,z*.6);}
  box(person,.92,2.8,0,.22,.38,.65,'#1d2529');const lens=mesh(person,new T.CylinderGeometry(.13,.13,.17,12),mat('#1c3947',.4,.2),1.09,2.8,0);lens.rotation.z=Math.PI/2;
 }
-function build(){const root=new T.Group();root.name='Poti reference model';const Q=63.2;
- box(root,0,-1.6,34,138,3.2,61,'#858b83');
+function build(){const root=new T.Group();root.name='Poti reference model';const Q=69.3;
+ box(root,0,-1.6,37.05,138,3.2,67.1,'#858b83');
  box(root,164.25,-1.6,34,191.5,3.2,61,'#858b83');
  // Road: inbound z 9..20 (heading west), outbound z 20..31.
  box(root,165,.07,20,190,.14,22,'#4b5254');
@@ -55080,14 +55081,14 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  // Terminate the siding before the eastern access road; its continuous asphalt ribbon stays clear.
  box(root,233.7,.7,59,.4,1.1,3,'#704439');for(const z of [58,60])box(root,233.4,.95,z,.3,.22,.4,'#e5c9ab');
  // High-mast floodlights (moved with the berths).
- for(const [x,z] of [[246,35.5],[77,153],[77,76],[35,6.8],[12,31],[-12,31],[-64,58],[-62,5.2],[66,31]])highMast(root,x,z);
+ for(const [x,z] of [[246,35.5],[77,153],[77,76],[35,6.8],[12,31],[-12,31],[-64,64.1],[-62,5.2],[66,31]])highMast(root,x,z);
  // B15: bulk quay jutting north from the land.
- box(root,77,-1.6,96,18,3.2,145,'#858b83');box(root,96,-1.6,140,20,3.2,57,'#858b83');box(root,67.8,.06,116.5,1.8,.12,104,'#bcb497');
- for(let z=65;z<165;z+=6){box(root,68.2,-.5,z,.7,1.8,1.4,'#273334');cylinder(root,69.2,.5,z,.27,.8,'#303a3a');}
+ box(root,77,-1.6,96,18,3.2,145,'#858b83');box(root,96,-1.6,140,20,3.2,57,'#858b83');box(root,67.8,.06,119.55,1.8,.12,97.9,'#bcb497');
+ for(let z=71;z<165;z+=6){box(root,68.2,-.5,z,.7,1.8,1.4,'#273334');cylinder(root,69.2,.5,z,.27,.8,'#303a3a');}
  const feeder=conveyorFeeder();feeder.position.set(78,0,116);feeder.rotation.y=Math.PI;root.add(feeder);
  // Berth 14 edge (north): crane rail strip, fenders, bollards.
  box(root,0,.06,Q,138,.12,1.8,'#bcb497');
- for(let x=-61;x<68;x+=5){box(root,x,.09,Q,2,.08,.8,'#d5ba57');box(root,x,-.5,64.5,1.4,1.8,.7,'#273334');cylinder(root,x,.5,62.2,.27,.8,'#303a3a');}
+ for(let x=-61;x<68;x+=5){box(root,x,.09,Q,2,.08,.8,'#d5ba57');box(root,x,-.5,70.6,1.4,1.8,.7,'#273334');cylinder(root,x,.5,68.3,.27,.8,'#303a3a');}
  // Berth 12 edge (south).
  for(let x=-62;x<256;x+=5){box(root,x,.06,4.3,2,.12,1.4,'#bcb497');if(x<69){box(root,x,-.5,3,1.4,1.8,.7,'#273334');cylinder(root,x,.5,4.6,.27,.8,'#303a3a');}}
  root.add(terminalBuilding());
@@ -55116,8 +55117,8 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const truckColors=['#eef0f0','#b8302c','#1f4f9c','#e07a1f','#2f7d4a','#5b6672','#d9b32a','#8e44ad','#16a085','#34495e'];
  const truckCount=(root.PotiOps&&root.PotiOps.TRUCK&&root.PotiOps.TRUCK.count)||truckColors.length;
  const trucks=Array.from({length:truckCount},(_,i)=>truckColors[i%truckColors.length]).map(c=>{const truck=roadTruck(c),tr=semiTrailer();root.add(truck);root.add(tr);return {truck,trailer:tr,load:tr.userData.load};});
- label(root,'BERTH 14',8,1,57,21,'#294c50');label(root,'BERTH 12',8,1.2,5.1,17,'#294c50');label(root,'B15',77,1.2,98,15,'#294c50');
- const moored=vessel('#3fa9da',1,'maersk');moored.position.set(-8,0,74);root.add(moored);
+ label(root,'BERTH 14',8,1,63.1,21,'#294c50');label(root,'BERTH 12',8,1.2,5.1,17,'#294c50');label(root,'B15',77,1.2,98,15,'#294c50');
+ const moored=vessel('#3fa9da',1,'maersk');moored.position.set(-8,0,80.1);root.add(moored);
  const moving=bulkVessel(.51);root.add(moving);const dredge=dredger();root.add(dredge);
  // West/south-west breakwater (green line) and the tanker berth south of the land (yellow line).
  breakwater(root,[[-124,125],[-122,40],[-108,-44],[-92,-118],[-60,-168],[-52,-182]]);
@@ -55133,7 +55134,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  kiosk(root,65,8,0);kiosk(root,0,35,0);
  label(root,'GATE 1',100,11,67,16,'#294c50');label(root,'YACHT CLUB',141,9.5,-14,16,'#294c50');
  const tk=tankerJetty(root);label(root,'TANKER BERTH',170,1.5,-92,20,'#294c50');
- const cranes=[-33,-8,24].map((x,i)=>{const c=mobileCrane(x,i*1.4);c.apply(c.poseFor([-24,1,33][i],53,30));root.add(c.group);return c;});
+ const cranes=[-33,-8,24].map((x,i)=>{const c=mobileCrane(x,i*1.4);c.apply(c.poseFor([-24,1,33][i],59.1,30));root.add(c.group);return c;});
  // Berth 12: a Gottwald mobile harbour crane in Konecranes colours, with the same boom floodlights.
  const gottwald=mobileCrane(-15,2.2,{z:8,rot:0,base:'#1668b3',cab:'#8f989b',tower:'#9aa3a6',boom:'#7fb9e0',lattice:['#9fd0ea','#6aa8d6','#8cc3e4'],name:'GOTTWALD',tool:'grab'});
  root.add(gottwald.group);cranes.push(gottwald);
@@ -55240,12 +55241,12 @@ const DREDGE_ROUTE=makePath((line,arc,slide)=>{
 });
 // NIKO NIKOLADZE runs the loop the other way round, so she leaves the berth ahead and returns astern-free.
 function dredgerPosition(){return [63,-1.4,Math.PI];}
-// Terminal tractor loop around the yard block: quay-side lane (+x, z = 53), the transfer lane between the reach stackers (x = 40, heading south), back lane (-x, z = 22).
+// Terminal tractor loop around the yard block: quay-side lane (+x, z = 59.1), the transfer lane between the reach stackers (x = 40, heading south), back lane (-x, z = 22).
 const TT=Object.freeze({speed:7.704,gap:19,count:6,kingpin:2.1,trailerCenter:7.3,axle:10.6});
-// Driven anticlockwise as in reality: west on the quay lane (z = 53), south on x = -30, east on the back lane (z = 22),
+// Driven anticlockwise as in reality: west on the quay lane (z = 59.1), south on x = -30, east on the back lane (z = 22),
 // north through the transfer lane (x = 40), same direction as the road trucks.
-const TT_ROUTE=makePath((line,arc)=>{const h=Math.PI/2,P=Math.PI;arc(-27,50,3,-3*h,-P);line(-30,50,-30,25);arc(-27,25,3,-P,-h);line(-27,22,37,22);arc(37,25,3,-h,0);line(40,25,40,50);arc(37,50,3,0,h);line(37,53,-27,53);});
-const TT_TOP=4*1.5*Math.PI+25+64+25,TT_UP=3*1.5*Math.PI+25+64;
+const TT_ROUTE=makePath((line,arc)=>{const h=Math.PI/2,P=Math.PI;arc(-27,56.1,3,-3*h,-P);line(-30,56.1,-30,25);arc(-27,25,3,-P,-h);line(-27,22,37,22);arc(37,25,3,-h,0);line(40,25,40,56.1);arc(37,56.1,3,0,h);line(37,59.1,-27,59.1);});
+const TT_SIDE=31.1,TT_TOP=4*1.5*Math.PI+TT_SIDE+64+TT_SIDE,TT_UP=3*1.5*Math.PI+TT_SIDE+64;
 // Crane handling sequence (seconds after the tractor stops). Poses: 'ship'/'tt', high = lifted clear.
 // Crane timeline units per second (7 % slower than the earlier .5712).
 const CRANE_RATE=.5312;
@@ -55256,7 +55257,7 @@ const CRANES=Object.freeze([{x:-33,drop:-19.5},{x:-8,drop:1},{x:24,drop:33}]);
 // enters the lane only when it is free and a stacker can serve it (an empty one for a tractor, a loaded one for a truck).
 const RS=Object.freeze({pick:5.5/1.4766,grab:2.5/1.4766,place:6.5/1.4766,release:3.1/1.4766,lane:40,z:38,units:[{x:20,rot:Math.PI},{x:60,rot:0}],reachOut:18,reachIn:13});
 const TT_ZONE=Object.freeze({enter:TT_UP-1.5*Math.PI-13,exit:TT_TOP+1+13.3+19});
-const TT_STOPS=Object.freeze([...CRANES.map((c,i)=>({s:mod(TT_TOP+37-c.drop+TT.trailerCenter,TT_ROUTE.length),hold:true,name:'crane'+i,crane:i})),{s:TT_UP+13+TT.trailerCenter,name:'reach',hold:true},{s:3*Math.PI+25+18.3,wait:7/1.656,name:'locks'}]);
+const TT_STOPS=Object.freeze([...CRANES.map((c,i)=>({s:mod(TT_TOP+37-c.drop+TT.trailerCenter,TT_ROUTE.length),hold:true,name:'crane'+i,crane:i})),{s:TT_UP+13+TT.trailerCenter,name:'reach',hold:true},{s:3*Math.PI+TT_SIDE+18.3,wait:7/1.656,name:'locks'}]);
 // Generic queueing mover: keeps a gap to the vehicle ahead, stops where wants(t,stop) says so.
 function moveAlong(list,dt,L,speed,gap,stops,wants,gate,clearance){
  for(const t of list){if(t.zoneEnd!==undefined&&mod(t.s-t.zoneEnd,L)<L/2){delete t.rsSlot;delete t.zoneEnd;delete t.mergeAt;t.parallel=false;}if(t.held)continue;if(t.wait>0){t.wait=Math.max(0,t.wait-dt);if(t.wait===0)t.done=t.stop;continue;}
@@ -55314,8 +55315,8 @@ const TRUCK_ROUTE=makePath((rawLine,rawArc)=>{const h=Math.PI/2,P=Math.PI;let di
  KM.gate=dist;line(110,67,92.1,56.67);arc(96.1,49.74,8,2*P/3,P);
  KM.crossIn=dist+24.24;line(88.1,49.74,88.1,22.5);arc(80.1,22.5,8,0,-h);
  KM.enter=dist+32.1;line(80.1,14.5,43,14.5);arc(43,17.5,3,-h,-P);
- KM.rs=dist+27.8;line(40,17.5,40,55);arc(44,55,4,P,h);KM.exit=dist+14;line(44,59,70,59);arc(70,55,4,h,0);
- line(74,55,74,29.5);arc(78,29.5,4,P,1.5*P);KM.crossOut=dist+10.1;line(78,25.5,242,25.5);arc(242,33.5,8,-h,0);
+ KM.rs=dist+27.8;line(40,17.5,40,49);arc(44,49,4,P,h);KM.exit=dist+14;line(44,53,70,53);arc(70,49,4,h,0);
+ line(74,49,74,29.5);arc(78,29.5,4,P,1.5*P);KM.crossOut=dist+10.1;line(78,25.5,242,25.5);arc(242,33.5,8,-h,0);
  KM.unload=dist+30;line(250,33.5,250,90);arc(240,90,10,0,h);
 });
 const PARKING_S=KM.parking;
@@ -55477,7 +55478,7 @@ if(!detailed)try{PotiModels.mergeStatic(model.root,[model.twistlocks,...model.pa
 const waterMaterial=new T.ShaderMaterial({fog:true,uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,{uTime:{value:0},uWave:{value:.7},uNight:{value:0},uWind:{value:8},uWindDir:{value:new T.Vector2(1,0)}}]),vertexShader:`uniform float uTime;uniform float uWave;uniform float uWind;uniform vec2 uWindDir;varying vec3 vWorld;varying vec3 vNormal;
 #include <fog_pars_vertex>
 float boxDist(vec2 q,vec2 c,vec2 h){vec2 d=abs(q-c)-h;return length(max(d,vec2(0.)))+min(max(d.x,d.y),0.);}
-float shoreDist(vec2 q){float d=boxDist(q,vec2(0.,34.),vec2(69.,30.5));
+float shoreDist(vec2 q){float d=boxDist(q,vec2(0.,37.05),vec2(69.,33.55));
  d=min(d,boxDist(q,vec2(165.,34.),vec2(95.,30.5)));d=min(d,boxDist(q,vec2(166.,88.),vec2(96.,26.)));
  d=min(d,boxDist(q,vec2(143.,-113.),vec2(99.,8.)));d=min(d,boxDist(q,vec2(77.,96.),vec2(9.,72.5)));d=min(d,boxDist(q,vec2(96.,140.),vec2(10.,28.5)));
  d=min(d,boxDist(q,vec2(90.,-5.25),vec2(10.,8.75)));d=min(d,boxDist(q,vec2(100.,-29.5),vec2(12.,8.4)));
@@ -55504,9 +55505,9 @@ const handling=[0,1,2].map(()=>({key:null,start:null}));const _v=new T.Vector3()
 const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2,lerp=(a,b,f)=>a+(b-a)*f,lerpPose=(a,b,f)=>({psi:lerp(a.psi,b.psi,f),a:lerp(a.a,b.a,f),drop:lerp(a.drop,b.drop,f)});
 const seg=(e,t0,t1)=>ease(Math.min(1,Math.max(0,(e-t0)/(t1-t0))));
 function craneStep(ci,e){const c=model.cranes[ci],seq=PotiOps.CRANE_SEQ,p=handling[ci].source,drop=PotiOps.CRANES[ci].drop;if(!p){c.carry.visible=false;return;}p.getWorldPosition(_v);
- const shipLow={x:_v.x,z:_v.z,y:_v.y+1.65},ttLow={x:drop,z:53,y:4.65},height=26;
+ const shipLow={x:_v.x,z:_v.z,y:_v.y+1.65},ttLow={x:drop,z:59.1,y:4.65},height=26;
  const at=(a,b,f)=>({x:lerp(a.x,b.x,f),z:lerp(a.z,b.z,f),y:lerp(a.y,b.y,f)});
- const shipHigh={...shipLow,y:height},ttHigh={...ttLow,y:height},clear={x:drop,z:70,y:height};
+ const shipHigh={...shipLow,y:height},ttHigh={...ttLow,y:height},clear={x:drop,z:76.1,y:height};
  const frames=[[0,handling[ci].startPoint],[3.5,shipHigh],[6,shipLow],[6.5,shipLow],[8.5,shipHigh],[11,clear],[13.5,ttHigh],[16,ttLow],[16.5,ttLow],[18.5,ttHigh]];
  let j=0;while(j<frames.length-2&&e>frames[j+1][0])j++;const [t0,a]=frames[j],[t1,b]=frames[j+1],f=seg(e,t0,t1);
  if(a==='start'){const target=c.poseFor(b.x,b.z,b.y),start=handling[ci].start;target.psi=start.psi+Math.atan2(Math.sin(target.psi-start.psi),Math.cos(target.psi-start.psi));c.apply(lerpPose(start,target,f));}
@@ -55542,7 +55543,7 @@ function updateSupervisor(t){const s=model.supervisor;if(!s)return;const cx=-25,
  s.position.set(cx+Math.cos(a)*r,Math.abs(Math.sin(t*2.2))*.06,cz+Math.sin(a)*r);
  s.rotation.y=a-Math.PI/2;
  if(s.userData.arm)s.userData.arm.rotation.x=-1.1+Math.sin(t*.5)*.9;}
-function updateYard(){for(const [id,p] of Object.entries(model.cargo))p.visible=!(motion.cargoTaken||[]).includes(id);model.twistlocks.userData.update(motion.tractors.find(t=>t.stop==='locks'&&t.wait>0),motion.tractors.reduce((n,t)=>n+(t.lockVisits||0),0),motion.time,motion.tractors.some(t=>t.loaded&&!t.unlocked&&t.stop!=='locks'&&t.s>30&&t.s<53.5));const rs=updateReach(),R=PotiOps.RS,seq=PotiOps.CRANE_SEQ,active=[null,null,null];
+function updateYard(){for(const [id,p] of Object.entries(model.cargo))p.visible=!(motion.cargoTaken||[]).includes(id);model.twistlocks.userData.update(motion.tractors.find(t=>t.stop==='locks'&&t.wait>0),motion.tractors.reduce((n,t)=>n+(t.lockVisits||0),0),motion.time,motion.tractors.some(t=>t.loaded&&!t.unlocked&&t.stop!=='locks'&&t.s>PotiOps.TT_STOPS[4].s-22.7&&t.s<PotiOps.TT_STOPS[4].s+.8));const rs=updateReach(),R=PotiOps.RS,seq=PotiOps.CRANE_SEQ,active=[null,null,null];
  motion.tractors.forEach((tt,i)=>{const L=model.tractors[i];placeVehicle(s=>PotiOps.tractorPosition(s,tt.rsSlot),tt.s,PotiOps.TT,{head:L.tractor,trailer:L.trailer});
   let show=tt.loaded;
   
