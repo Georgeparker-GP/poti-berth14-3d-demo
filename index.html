@@ -54267,6 +54267,9 @@ function container(g,x,y,z,idx,brand,turn){let col=colors[idx%colors.length],tex
 // Oriented slab: a rectangular member from point a to point b (width w, depth d).
 function slab(g,a,b,w,d,c){const A=new T.Vector3(...a),B=new T.Vector3(...b),m=mesh(g,cube,typeof c==='string'?mat(c):c);m.position.copy(A).add(B).multiplyScalar(.5);m.scale.set(w,A.distanceTo(B),d);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),B.sub(A).normalize());return m;}
 // Flush painted lettering, fixed to each accommodation face.
+// Ship's name on the transom: the side lettering's font, centred on the stern face (hull end at local x), facing aft.
+function sternName(g,text,x,y,w,color='#fff'){const c=document.createElement('canvas');c.width=512;c.height=96;const q=c.getContext('2d');q.font='bold 76px sans-serif';q.textAlign='center';q.fillStyle=color;q.fillText(text,256,78,500);
+ const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const m=mesh(g,new T.PlaneGeometry(w,w*96/512),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),x-.04,y,0);m.rotation.y=-Math.PI/2;m.castShadow=false;m.name=text+' (stern)';return m;}
 function paintedText(g,text,x,y,z,w,h,rotation,color){
  const c=document.createElement('canvas');c.width=1024;c.height=128;const q=c.getContext('2d');q.font='bold 80px Arial';q.textAlign='center';q.fillStyle=color;q.fillText(text,512,94,990);
  const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;
@@ -54290,7 +54293,7 @@ function roroDioskuria(){
   for(let x=-26;x<30;x+=2.7)box(g,x,10.3,sd*6.04,.62,.85,.06,glass);
   for(let x=21;x<32;x+=1.5)box(g,x,18.15,sd*7.24,1.1,1,.06,glass);
   for(let x=22;x<31;x+=2.3)box(g,x,15.5,sd*6.18,.7,1,.06,glass);
-  paintedText(g,'DIOSKURIA',29,4.8,sd*6.05,12,1.5,sd<0?Math.PI:0,'#152a53');
+  paintedText(g,'DIOSKURIA',29,4.8,sd*6.05,12,1.5,sd<0?Math.PI:0,'#152a53');if(sd>0)sternName(g,'DIOSKURIA',-53*.82,3.2,7,'#152a53');
   for(let x=-33;x<32;x+=3)beam(g,[x,12,sd*6],[x,12.8,sd*6],.035,white);
   beam(g,[-33,12.8,sd*6],[32,12.8,sd*6],.035,white);
   for(const x of [-9,1]){const b=mesh(g,new T.SphereGeometry(1,12,8),mat('#dd592d'),x,14.7,sd*4.5);b.scale.set(3.1,.85,1);beam(g,[x,13.7,sd*3],[x,16,sd*4.5],.09,white);}
@@ -54331,7 +54334,7 @@ function vessel(color,scale=1,kind='green'){
   for(const [sx,sy] of [[113,165],[247,75]])star(fq,sx*k,sy*k,20*k,'#fff');});
 
  for(const z of [-6.7,6.7]){const lifeboat=mesh(g,new T.SphereGeometry(1,12,8),mat('#ed7637'),-42,11,z);lifeboat.scale.set(2.8,1.1,1.1);}
- if(kind==='maersk'){// Ship's name in white on both bow flanks, laid on the hull side (z = 8 - 0.05 (x - 22)).
+ if(kind==='maersk'){sternName(g,'CLAIRE A',-53,4.4,7.5);// Ship's name in white on both bow flanks, laid on the hull side (z = 8 - 0.05 (x - 22)).
   const nc=document.createElement('canvas');nc.width=512;nc.height=96;const nq=nc.getContext('2d');nq.font='bold 76px sans-serif';nq.textAlign='center';nq.fillStyle='#fff';nq.fillText('CLAIRE A',256,78);
   const nt=new T.CanvasTexture(nc);nt.colorSpace=T.SRGBColorSpace;for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(7,1.3),new T.MeshBasicMaterial({map:nt,transparent:true,depthWrite:false}),31.5,4.3,sd*(7.525+.03));m.rotation.y=sd>0?.05:Math.PI-.05;m.castShadow=false;}}
  for(const z of [-7.8,7.8]){for(let x=-48;x<=35;x+=3)beam(g,[x,6.8,z],[x,7.7,z],.035,'#bfcac5');beam(g,[-48,7.7,z],[35,7.7,z],.035,'#bfcac5');}
@@ -54386,7 +54389,7 @@ function mobileCrane(x,phase,opt={}){const P=Object.assign({z:66.1,rot:Math.PI,b
  function apply(p){Object.assign(pose,p);turret.rotation.y=pose.psi;boom.rotation.x=pose.a;const endY=15+length*Math.sin(pose.a),endZ=-length*Math.cos(pose.a),rope=Math.max(.2,pose.drop-1.9);for(let i=0;i<2;i++){cables[i].position.set(i? .5:-.5,endY-rope*.5,endZ);cables[i].scale.y=rope;}hook.position.set(0,endY-pose.drop,endZ);hook.rotation.y=-pose.psi;}
  // Pose that puts the spreader centre at world (x, y, z) with the spreader aligned to world x.
  function poseFor(x,z,y){const wx=x-g.position.x,wz=z-g.position.z,ry=-g.rotation.y,dx=wx*Math.cos(ry)+wz*Math.sin(ry),dz=-wx*Math.sin(ry)+wz*Math.cos(ry),R=Math.min(length*.999,Math.hypot(dx,dz)),a=Math.acos(R/length);return {psi:Math.atan2(-dx,-dz),a,drop:2.5+15+length*Math.sin(a)-y};}
- function update(clock){const t=clock*.1424+phase;apply({psi:Math.sin(t)*.65,a:.72+Math.sin(t*.8)*.08,drop:9+(1+Math.sin(t*1.5))*4});}
+ function update(clock){const t=clock*.1381+phase;apply({psi:Math.sin(t)*.65,a:.72+Math.sin(t*.8)*.08,drop:9+(1+Math.sin(t*1.5))*4});}
  update(0);return {group:g,update,apply,poseFor,pose,carry,boom};
 }
 function church(){const g=new T.Group();g.position.set(90,0,-6);g.userData.kind='church';const cream='#ead9b8',trim='#c4a675';box(g,0,.25,0,10,.5,9,'#798784');box(g,0,4,0,7.5,7.5,6.5,cream);
@@ -54620,7 +54623,7 @@ function tanker(name){const g=new T.Group();g.userData.kind='tanker';safetyLette
  box(g,-46,21.5,0,2.6,4,3,'#f1f1ec');box(g,-46,23.8,0,2.8,.8,3.2,'#e0592b');beam(g,[-41,19,0],[-41,27,0],.12,'#f1f1ec');
  shipFlag(g,-41,26.8,'Panama flag',2/3,(q,W,H)=>{q.fillStyle='#fff';q.fillRect(0,0,W,H);q.fillStyle='#da121a';q.fillRect(W/2,0,W/2,H/2);q.fillStyle='#072357';q.fillRect(0,H/2,W/2,H/2);star(q,W/4,H/4,H*.16,'#072357');star(q,W*.75,H*.75,H*.16,'#da121a');});
  for(const z of [-7,7]){const lb=mesh(g,new T.SphereGeometry(1,12,8),mat('#ed7637'),-40,10,z);lb.scale.set(2.4,1,1);}
- if(name){// Name in white on both bow flanks, laid on the hull side between stations x = 36 and 44.
+ if(name){sternName(g,name,-53,4.4,7.5);// Name in white on both bow flanks, laid on the hull side between stations x = 36 and 44.
   const nc=document.createElement('canvas');nc.width=512;nc.height=96;const nq=nc.getContext('2d');nq.font='bold 76px sans-serif';nq.textAlign='center';nq.fillStyle='#fff';nq.fillText(name,256,78);
   const nt=new T.CanvasTexture(nc);nt.colorSpace=T.SRGBColorSpace;const k=(7.3-4.7)/8,x=38.6,hw=7.3-k*(x-36);
   for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(6.4,1.2),new T.MeshBasicMaterial({map:nt,transparent:true,depthWrite:false}),x,4.6,sd*(hw+.04));m.rotation.y=sd>0?Math.atan(k):Math.PI-Math.atan(k);m.castShadow=false;}}
@@ -54647,6 +54650,7 @@ function bulkVessel(scale){const g=new T.Group();g.name='vessel';g.userData.kind
  
  const c=document.createElement('canvas');c.width=1024;c.height=128;const q=c.getContext('2d');q.font='bold 90px sans-serif';q.textAlign='center';q.fillStyle='#fff';q.fillText('POTI BULK',512,100);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;
  for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(26,3.3),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),20,4.4,sd*8.03);if(sd<0)m.rotation.y=Math.PI;}
+ sternName(g,'POTI BULK',-53,4.4,8.5);
  return g;}
 // Tanker berth: a solid mole south of Berth 12, almost parallel to it, reached by a causeway road from the land.
 // It narrows the harbour entrance together with the breakwater. Seaward face and head are armoured with tetrapods.
@@ -54671,6 +54675,7 @@ function dredger(){const g=new T.Group();g.name='NIKO NIKOLADZE';g.userData.kind
  for(const z of [-3,3]){for(let x=-13;x<=12;x+=2)beam(g,[x,3.8,z],[x,4.6,z],.035,white);beam(g,[-13,4.6,z],[12,4.6,z],.035,white);}
  const c=document.createElement('canvas');c.width=1024;c.height=128;const q=c.getContext('2d');q.fillStyle='white';q.font='bold 78px sans-serif';q.textAlign='center';q.fillText('NIKO NIKOLADZE',512,94);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;
  for(const sd of [-1,1]){const sign=mesh(g,new T.PlaneGeometry(12,1.5),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),5,2.2,sd*3.45);if(sd<0)sign.rotation.y=Math.PI;}
+ sternName(g,'NIKO NIKOLADZE',-53*.3,2.3,4.4);
  return g;}
 function flatRackStack(root){const g=new T.Group();g.name='Six folded flat racks';g.position.set(-53,0,14);root.add(g);
  const palette=['#183e69','#923d2c','#64796e'];for(let k=0;k<6;k++){const y=.5+k*.62,col=palette[k%3];for(const z of [-1.22,1.22])box(g,0,y,z,10,.48,.23,col);box(g,0,y+.12,0,9.5,.16,2.3,'#968b6d');for(let x=-4.5;x<=4.5;x+=.6)box(g,x,y+.22,0,.045,.03,2.25,'#625d4f');for(const x of [-4.8,4.8]){box(g,x,y+.2,0,.35,.48,2.6,col);for(const z of [-1.2,1.2])box(g,x,y+.42,z,.32,.15,.3,'#b9bcae');}for(const z of [-1.35,1.35])paintedText(g,k%3===0?'seaco':'FLAT RACK',0,y,z,4,.38,z<0?Math.PI:0,'#e7d98e');}
@@ -54719,7 +54724,11 @@ function tankerJetty(root){const g=new T.Group();g.userData.kind='jetty';root.ad
  // Diagonal staging road and the two connectors down to the main road.
  const approach=[[240,100],[120,100]];for(let i=1;i<=30;i++){const t=i/30,u=1-t;approach.push([u*u*u*120+3*u*u*t*91+3*u*t*t*122+t*t*t*110,u*u*u*100+3*u*u*t*100+3*u*t*t*74+t*t*t*67]);}approach.push([92.1,56.67],[88.1,49.74]);roadRibbon(g,approach,8);
  roadRibbon(g,[[236,25.5],[242,25.5],[248,28],[250,33.5],[250,80],[250,90],[247,97],[240,100]],8);
- cylinder(g,240,.185,100,4.15,.05,'#4b5254');label(g,'P',183,.8,93,10,'#ffffff');
+ cylinder(g,240,.185,100,4.15,.05,'#4b5254');
+ // Parking mark painted white on the staging lot, centred between the rail fence (z = 62) and the truck road (z = 96).
+ {const c=document.createElement('canvas');c.width=c.height=256;const q=c.getContext('2d');q.font='bold 230px sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillStyle='#f4f3ec';q.fillText('P',128,138);
+  const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const pg=new T.Group();pg.position.set(180,.13,79);pg.rotation.y=Math.PI/2;g.add(pg);
+  const m=new T.Mesh(new T.PlaneGeometry(9,9),new T.MeshStandardMaterial({map:tex,transparent:true,depthWrite:false,roughness:.9}));m.rotation.x=-Math.PI/2;m.renderOrder=1;pg.add(m);}
  box(g,88.1,.07,36,8,.14,34,'#4b5254');
  // Paved access lane on the pier, so the trucks no longer drive over bare concrete.
  box(g,64,.07,14.5,48,.14,8,'#4b5254');box(g,84.5,.07,18.5,7,.14,8,'#4b5254');
@@ -54785,6 +54794,42 @@ function dryDockCrew(dock){const S=1.17,crew=new T.Group();crew.name='Dry dock c
   for(const w of welders){const on=Math.sin(t*.35+w.ph)>-.35,fl=on?.6+Math.random()*.4:0;w.arc.visible=on;w.arc.scale.setScalar(.5+fl*.6);w.light.intensity=fl*14;
    const P=w.sparks.geometry.attributes.position;for(let k=0;k<w.vel.length;k++){const v=w.vel[k];v[3]+=dt;if(v[3]>.9){if(!on){P.setXYZ(k,0,-50,0);continue;}v[0]=(Math.random()-.5)*3;v[1]=Math.random()*2.5;v[2]=(Math.random()-.5)*3;v[3]=Math.random()*.3;P.setXYZ(k,w.tip.x,w.tip.y,w.tip.z);}
     else{v[1]-=9.8*dt;let x=P.getX(k)+v[0]*dt,y=P.getY(k)+v[1]*dt,z=P.getZ(k)+v[2]*dt;if(y<w.floor){y=w.floor;v[1]*=-.25;v[0]*=.5;v[2]*=.5;}P.setXYZ(k,x,y,z);}}P.needsUpdate=true;}}};}
+// Floating crane KHIBULA (after the photo): black pontoon ringed with tyre fenders and a red deck edge, blue two-deck
+// house with stairs aft, a slewing blue cab on a pedestal tower, lattice boom luffed out with hook, a loader on deck.
+function floatingCrane(root,x,z,rot){const g=new T.Group();g.name='KHIBULA';g.userData.kind='floating-crane';g.position.set(x,0,z);g.rotation.y=rot;root.add(g);
+ const blue='#1f6fb2',blue2='#2b84c9',dark='#1d2124',red='#a8322b',white='#eef0ec';
+ box(g,0,.3,0,40,2.6,14,dark);box(g,0,1.62,0,40.2,.14,14.2,red);box(g,0,1.72,0,39,.1,13,'#6f6a62');
+ for(const sd of [-1,1])for(let k=-19;k<=19;k+=2.2){if(k>-.5&&k<8.5)continue;const t=mesh(g,new T.TorusGeometry(.5,.22,6,12),mat('#15181a',0,.9),k,.9,sd*7.2);}
+ for(const sx of [-1,1])for(let k=-6;k<=6;k+=2.2)mesh(g,new T.TorusGeometry(.5,.22,6,12),mat('#15181a',0,.9),sx*20.2,.9,k).rotation.y=Math.PI/2;
+ for(const sd of [-1,1]){for(let k=-19;k<=19;k+=2)beam(g,[k,1.8,sd*6.6],[k,2.8,sd*6.6],.04,red);beam(g,[-19.5,2.8,sd*6.6],[19.5,2.8,sd*6.6],.04,red);}
+ // Accommodation aft: two decks, windows, rails and an outside stair.
+ box(g,-12,3.6,0,12,3.6,11,blue);box(g,-12.5,6.9,0,9,3,9,blue2);box(g,-12,5.5,0,12.6,.2,11.6,'#d5dad8');box(g,-12.5,8.5,0,9.6,.2,9.6,'#d5dad8');
+ for(const sd of [-1,1])for(let k=-16;k<-7;k+=2){box(g,k,3.9,sd*5.53,1.1,.9,.06,'#1a2b33');if(k>-16.5&&k<-8.5)box(g,k,7.1,sd*4.53,1,.8,.06,'#1a2b33');}
+ for(let i=0;i<8;i++)box(g,-5.6-i*.35,2+i*.45,5.2,.35,.08,1.2,'#d5dad8');beam(g,[-5.4,2,5.8],[-8.4,5.6,5.8],.04,white);
+ beam(g,[-15,8.6,2],[-15,15,2],.06,'#c9ced0');beam(g,[-15,13.5,1.3],[-15,13.5,2.7],.04,'#c9ced0');
+ // Pedestal tower and slewing cab, slewed so the boom points west over open water, away from the dry dock.
+ cylinder(g,0,6,0,1.6,8.5,blue);box(g,0,1.9,0,5,.6,5,blue);
+ const turret=new T.Group();turret.position.set(0,10.2,0);turret.rotation.y=Math.PI/2;g.add(turret);g.userData.turret=turret;
+ box(turret,0,0,0,6,1.2,5,blue);box(turret,-.5,3.2,0,4.6,5.2,4.6,blue2);for(const sd of [-1,1])box(turret,-.5,3.8,sd*2.33,2.2,1.2,.06,'#1a2b33');
+ box(turret,-3.4,1.2,0,2.2,2.2,3.6,'#3b3f42');beam(turret,[-.5,5.8,0],[-2.5,8.8,0],.35,blue);beam(turret,[-2.5,8.8,0],[-3.6,6.8,0],.3,blue);
+ cylinder(turret,-3.6,6.8,0,.9,.9,blue);
+ // Lattice boom, luffed to ~40 degrees, with its pendant and hoist wires and the hook block.
+ const boom=new T.Group();boom.position.set(2.4,1.4,0);boom.rotation.z=.72;turret.add(boom);const L=30;
+ for(const dz of [-.8,.8])for(const dy of [-.6,.6])beam(boom,[0,dy,dz],[L,dy*.4,dz*.4],.1,blue);
+ for(let k=0;k<L-1;k+=2){const f=1-.6*k/L,f2=1-.6*(k+2)/L;beam(boom,[k,-.6*f,-.8*f],[k+2,.6*f2,-.8*f2],.05,blue2);beam(boom,[k,-.6*f,.8*f],[k+2,.6*f2,.8*f2],.05,blue2);beam(boom,[k,.6*f,-.8*f],[k+2,.6*f2,.8*f2],.05,blue2);}
+ box(boom,L+.3,0,0,1,.9,.8,blue);
+ const tip=new T.Vector3(L+.3,0,0);boom.updateMatrixWorld(true);turret.updateMatrixWorld(true);
+ const tipT=tip.clone().applyMatrix4(boom.matrix);beam(turret,[-3.6,6.8,0],[tipT.x,tipT.y,tipT.z],.03,'#2a2a2a');beam(turret,[-3.6,7,.3],[tipT.x,tipT.y,tipT.z+.2],.03,'#2a2a2a');
+ beam(turret,[tipT.x,tipT.y,tipT.z],[tipT.x,2.2,tipT.z],.035,'#2a2a2a');box(turret,tipT.x,1.7,tipT.z,.9,1,.7,'#e0a526');mesh(turret,new T.TorusGeometry(.35,.1,6,12,Math.PI*1.4),mat('#3a3a3a'),tipT.x,.9,tipT.z);
+ // Wheel loader and a bin forward on deck.
+ {const l=new T.Group();l.position.set(12,1.8,-1.5);l.rotation.y=Math.PI;g.add(l);box(l,0,1.2,0,3.6,1.3,2,'#e0a526');box(l,-.8,2.5,0,1.6,1.4,1.6,'#e0a526');box(l,-.8,2.6,0,1.5,1,1.65,'#2a3e48');
+  for(const [wx,wz] of [[-1.2,-1.1],[-1.2,1.1],[1.2,-1.1],[1.2,1.1]]){const w=cylinder(l,wx,.75,wz,.75,.5,'#1b1b1b');w.rotation.x=Math.PI/2;}beam(l,[1.6,1.4,-.7],[3.2,1,-.7],.12,'#e0a526');beam(l,[1.6,1.4,.7],[3.2,1,.7],.12,'#e0a526');box(l,3.5,.7,0,.8,1,2.4,'#6d6d6d');}
+ box(g,16,2.6,3.5,4,1.6,3.5,blue);
+ // Name on both flanks (a fender-free panel) and the stern.
+ const nc=document.createElement('canvas');nc.width=512;nc.height=96;const nq=nc.getContext('2d');nq.font='bold 78px sans-serif';nq.textAlign='center';nq.fillStyle='#fff';nq.fillText('KHIBULA',256,80);const nt=new T.CanvasTexture(nc);nt.colorSpace=T.SRGBColorSpace;
+ for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(7,1.3),new T.MeshBasicMaterial({map:nt,transparent:true,depthWrite:false}),4,.6,sd*7.03);if(sd<0)m.rotation.y=Math.PI;m.castShadow=false;}
+ {const m=mesh(g,new T.PlaneGeometry(7,1.3),new T.MeshBasicMaterial({map:nt,transparent:true,depthWrite:false}),-20.03,.6,0);m.rotation.y=-Math.PI/2;m.castShadow=false;}
+ return g;}
 function dryDock(root,x,z,name){const g=new T.Group();g.userData.kind='drydock';g.position.set(x,0,z);g.rotation.y=Math.PI/2;g.scale.setScalar(.6);root.add(g);
  {const c=document.createElement('canvas');c.width=1024;c.height=128;const q=c.getContext('2d');q.font='bold 86px "Noto Sans Georgian","BPG Arial",sans-serif';q.textAlign='center';q.fillStyle='#fff';q.fillText(name,512,98);const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;
   for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(30,3.75),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),0,2.6,sd*11.03);if(sd<0)m.rotation.y=Math.PI;}}const rust='#a24a2f',dark='#5b2c22';
@@ -54950,9 +54995,11 @@ function meshFence(g,x0,z0,x1,z1,gap){const len=Math.hypot(x1-x0,z1-z0),dx=(x1-x
 // White guard kiosk with glazing and a flat roof.
 function kiosk(g,x,z,rot=0,scale=1.4){const K=new T.Group();K.position.set(x,0,z);K.rotation.y=rot;K.scale.setScalar(scale);g.add(K);
  box(K,0,.2,0,7.4,.4,4.2,'#b8bcb8');box(K,0,1.8,0,6.6,3,3.4,'#f2f3f0');box(K,0,3.45,0,7.2,.3,4,'#e2e4e0');
- for(const x2 of [-2.1,0,2.1])for(const dz2 of [1.72,-1.72])box(K,x2,2.2,dz2,1.7,1.4,.06,mat('#2a4650',.35,.2));
+ for(const x2 of [-2.1,0,2.1])for(const dz2 of [1.72,-1.72])if(!(x2>0&&dz2<0))box(K,x2,2.2,dz2,1.7,1.4,.06,mat('#2a4650',.35,.2));
  for(const dx2 of [3.32,-3.32])box(K,dx2,2.2,0,.06,1.4,2.4,mat('#2a4650',.35,.2));
- box(K,2.4,.9,-1.72,1.3,1.8,.1,'#dfe2de');box(K,0,3.8,0,.5,.4,.5,'#2f6fb0');box(K,-3,1,0,.7,1.6,3.2,'#dfe2de');
+ // Entrance door on the quay-side face, east end (towards the dredger's bow): dark frame, glazed upper panel, handle and a step.
+ {const dx=2.35,fz=-1.74;box(K,dx,1.35,fz,1.2,2.3,.08,'#3c464b');box(K,dx,1.3,fz-.03,1,2.1,.06,'#7e8c93');box(K,dx,1.85,fz-.07,.7,.75,.03,mat('#2a4650',.35,.2));box(K,dx-.35,1.2,fz-.1,.08,.25,.06,'#d5d9d5');box(K,dx,.45,fz-.35,1.3,.1,.6,'#9ea39e');}
+ box(K,0,3.8,0,.5,.4,.5,'#2f6fb0');box(K,-3,1,0,.7,1.6,3.2,'#dfe2de');
  return K;}
 // Pilot boat after the photo: red hull with a black rubbing strake, grey deck and raked wheelhouse.
 function pilotBoat(g,x,z,rot){const P=new T.Group();P.position.set(x,0,z);P.rotation.y=rot;P.scale.setScalar(.8);P.userData.kind='pilot';g.add(P);
@@ -55121,6 +55168,12 @@ function concreteBarrier(root,x,z,rot){
  return g;}
 // Barrier lines, evenly spaced: along the south edge of the truck lane on the pier, across the pier's east end
 // north of the land road, and across the west end of the empty container yard beside the MSC stacks.
+// White turn arrow on the pier lane (trucks run west, then turn north into the transfer lane at x = 40).
+function roadArrow(root){const g=new T.Group();g.name='Road arrow';root.add(g);const white=mat('#f2f1ea',0,.8),y=.16;
+ const seg=(ax,az,bx,bz,w)=>{const m=box(g,(ax+bx)/2,y,(az+bz)/2,Math.hypot(bx-ax,bz-az),.03,w,white);m.rotation.y=Math.atan2(-(bz-az),bx-ax);m.castShadow=false;};
+ seg(56,14.5,48.6,14.5,.5);seg(48.8,14.5,47.6,15.1,.5);seg(47.6,14.9,47.6,16.3,.5);
+ const sh=new T.Shape();sh.moveTo(-.9,0);sh.lineTo(.9,0);sh.lineTo(0,1.6);sh.closePath();const head=new T.Mesh(new T.ShapeGeometry(sh),white);
+ head.rotation.x=-Math.PI/2;head.rotation.z=Math.PI;head.position.set(47.6,y+.01,16.2);head.scale.set(1,1,1);g.add(head);}
 function barrierLines(root){
  for(let k=0;k<6;k++)concreteBarrier(root,42.5+k*3.24,9.3,0); // ends just short of the kiosk at x = 59.8
  // Short return at the west end, down to the quay edge.
@@ -55155,7 +55208,7 @@ function flatWagon(root,x,z){const g=new T.Group();g.name='Flat wagon';g.positio
   const bx=sx*(L/2-3);box(g,bx,.95,0,3.2,.35,2.2,dark);for(const ax of [-.9,.9])for(const sd of [-1,1]){const w=cylinder(g,bx+ax,.92,sd*.72,.46,.14,'#3b3e41');w.rotation.x=Math.PI/2;}}
  return g;}
 function yardDetails(root){
- const rs=reachStacker(126,50,false,'#c92d2b');rs.name='Stationary red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=-Math.PI/2;rs.userData.rs.setBoom(4.5,11);root.add(rs);
+ const rs=reachStacker(126,50,false,'#c92d2b');rs.name='Stationary red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=-Math.PI/2;rs.userData.rs.setBoom(4.5,11);rs.userData.rs.carry.removeFromParent();root.add(rs);
  const msc=containerMat('#b8a25c','MSC');const g=new T.Group();g.name='MSC container stacks';root.add(g);
  for(let bay=0;bay<2;bay++)for(let row=0;row<2;row++)for(let tier=0;tier<((bay===4?2:3)-(row===1?1:0));tier++)box(g,119+bay*11,1.55+tier*2.8,35.2+row*3.1,10,2.8,2.65,msc);
  highMast(root,173,35);
@@ -55237,7 +55290,8 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
   breakwater(root,pts.slice(0,j+1).reverse());}
  // Short south breakwater off the mole head: forms the narrow entrance channel with the west breakwater.
  
- const dockCrew=dryDockCrew(dryDock(root,-28,136,'DRY DOCK'));label(root,'DRY DOCK',-28,9,136,16,'#294c50');
+ const dockCrew=dryDockCrew(dryDock(root,-28,136,'DRY DOCK'));
+ const khibula=floatingCrane(root,-74,146,Math.PI/2);label(root,'DRY DOCK',-28,9,136,16,'#294c50');
  yachtClub(root); // Terminal boundary fence along the rail line, with the opening at Gate 1.
  meshFence(root,76,62,236,62,[10,34]);
  // Chain-link fence along the south side of the land road, from the pier corner to the far end.
@@ -55250,18 +55304,19 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const gottwald=mobileCrane(-15,2.2,{z:8,rot:0,base:'#1668b3',cab:'#8f989b',tower:'#9aa3a6',boom:'#7fb9e0',lattice:['#9fd0ea','#6aa8d6','#8cc3e4'],name:'GOTTWALD',tool:'grab'});
  root.add(gottwald.group);cranes.push(gottwald);
  const supervisor=berthSupervisor();root.add(supervisor);
- yardDetails(root);barrierLines(root);for(let k=0;k<3;k++)flatWagon(root,132+k*20.3,59);dryDockShoreLights(root);urbanZone(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
+ yardDetails(root);barrierLines(root);roadArrow(root);for(let k=0;k<3;k++)flatWagon(root,132+k*20.3,59);dryDockShoreLights(root);urbanZone(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
  flatRackStack(root);const twistlocks=twistlockStation(root);
  const tractors=Array.from({length:6},(_,i)=>{const tractor=terminalTractor(i+1),tr=trailer();root.add(tractor);root.add(tr);return {tractor,trailer:tr,load:tr.userData.load};});
  const tugs=[tugBoat(),tugBoat()];tugs.forEach(t=>{t.scale.setScalar(.85);root.add(t);});
  const towMat=mat('#20262a');const towLines=tugs.map(()=>{const m=new T.Mesh(cyl,towMat);root.add(m);return m;});
- const pk=moored.userData.picks;return {root,twistlocks,cargo:moored.userData.cargo,palms:animatedPalms,walkers,supervisor,dredger:dredge,gate:root.userData.gate,moored,moving,tanker:tk.tanker,cranes,tractors,tugs,towLines,picks:[pk[1],pk[4],pk[5]],stackers,trucks,dockCrew,dredgerModel:dredge};
+ const pk=moored.userData.picks;return {root,twistlocks,cargo:moored.userData.cargo,palms:animatedPalms,walkers,supervisor,dredger:dredge,gate:root.userData.gate,moored,moving,tanker:tk.tanker,cranes,tractors,tugs,towLines,picks:[pk[1],pk[4],pk[5]],stackers,trucks,dockCrew,dredgerModel:dredge,khibula};
 }
 // Merge the static scenery into one mesh per material: cuts several thousand draw calls to a few hundred,
 // which is what lets phones run the animation. Dynamic objects are left untouched.
 function mergeStatic(root,dynamic,localTo){const skip=new Set();for(const d of dynamic){if(d&&d.traverse)d.traverse(c=>skip.add(c));}
  root.updateMatrixWorld(true);const groups=new Map(),drop=[];const inv=localTo?new T.Matrix4().copy(localTo.matrixWorld).invert():null,tmp=new T.Matrix4();
- root.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||o.isSprite||pools.includes(o)||skip.has(o)||!o.geometry||!o.geometry.attributes.position)return;
+ const hidden=o=>{for(let n=o;n;n=n.parent)if(!n.visible)return true;return false;};
+ root.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||o.isSprite||pools.includes(o)||skip.has(o)||!o.geometry||!o.geometry.attributes.position||hidden(o))return;
   const key=o.material.uuid;if(!groups.has(key))groups.set(key,{material:o.material,list:[]});groups.get(key).list.push(o);drop.push(o);});
  for(const {material,list} of groups.values()){if(list.length<2)continue;
   const pos=[],nor=[],uv=[],v=new T.Vector3(),nm=new T.Matrix3();
@@ -55319,6 +55374,9 @@ function evaluate(w){
 const CYCLE=Object.freeze({run:136,dwell:364});
 function advance(state,dt,ops,paused){const next={...state};if(paused)return next;next.time+=dt;const gates=laneGates(state);next.cargoTaken=[...(state.cargoTaken||[])];next.tractors=advanceTractors(state.tractors,dt,ops.cranes.allowed,gates.tt,next.cargoTaken,(state.craneCycles||[]).map(c=>c.cargo&&c.e<16.3),(state.craneCycles||[]).map(c=>c.cargo?c.e:null),state.trucks||[]);next.trucks=advanceTrucks(state.trucks,dt,ops.cranes.allowed?gates.truck:gates.truck.map(g=>({...g,open:t=>t.loaded&&g.open(t)})),next.tractors);if(ops.cranes.allowed)next.reach=advanceReach(state.reach,next.tractors,next.trucks,dt);if(ops.cranes.allowed){
  advanceCraneCycles(next,dt);
+ // Endless demo: when every box is ashore and nothing is in hand, pause 30 s, then the ship is full again.
+ {const idle=next.cargoTaken.length>=CARGO_TOTAL&&(next.craneCycles||[]).every(c=>!c.cargo)&&!next.tractors.some(t=>t.loaded)&&next.reach.units.every(u=>!u.holding&&u.phase==='idle');
+  next.refill=idle?(state.refill||0)+dt:0;if(next.refill>=30){next.cargoTaken=[];next.refill=0;next.shipLoads=(state.shipLoads||0)+1;}}
  for(const t of next.trucks){if(!t.loaded||t.rsSlot===undefined||Math.abs(t.s-KM.rs)>.1)continue;
  const other=next.reach.units[1-t.rsSlot];
  if(other.holding||other.phase==='place'||next.trucks.some(v=>v!==t&&v.rsSlot!==undefined&&!v.loaded)){t.wait=Math.max(t.wait,.2);t.stop='rs';}
@@ -55331,8 +55389,8 @@ function advance(state,dt,ops,paused){const next={...state};if(paused)return nex
   next.dredgerProgress=0;
   next.marineOwner='bulk';}
  else{// Manoeuvring suspended while the bulk carrier is alongside: the tugs may still finish letting go and running to their
-  // waiting spot by the yacht club, but they stay there (no return, no departure) until the limits clear.
-  const park=1+(TUG_T.rel+TUG_T.go+TUG_T.wait)/CYCLE.run;if(next.vesselProgress>=1&&next.vesselProgress<park)next.vesselProgress=Math.min(park,next.vesselProgress+dt/CYCLE.run);}
+  // waiting spot by the yacht club, and they stay there moored (no return, no departure) until the limits clear.
+  const park=1+(TUG_T.rel+TUG_T.go+TUG_T.wait-TUG_T.side-1)/CYCLE.run;if(next.vesselProgress>=1&&next.vesselProgress<park)next.vesselProgress=Math.min(park,next.vesselProgress+dt/CYCLE.run);}
  return next;}
 // Route of vessel 02 (bulk carrier): north through the narrow entrance between the breakwater head and the tanker mole,
 // a starboard turn, a U-turn in the basin, then tugs push it sideways onto Berth 12.
@@ -55357,20 +55415,22 @@ const DREDGE_ROUTE=makePath((line,arc,slide)=>{
 // NIKO NIKOLADZE runs the loop the other way round, so she leaves the berth ahead and returns astern-free.
 function dredgerPosition(){return [63,-1.4,Math.PI];}
 // Terminal tractor loop around the yard block: quay-side lane (+x, z = 59.1), the transfer lane between the reach stackers (x = 40, heading south), back lane (-x, z = 22).
-const TT=Object.freeze({speed:7.704,gap:19,count:6,kingpin:2.1,trailerCenter:7.3,axle:10.6});
+const TT=Object.freeze({speed:8.089,gap:19,count:6,kingpin:2.1,trailerCenter:7.3,axle:10.6});
 // Driven anticlockwise as in reality: west on the quay lane (z = 59.1), south on x = -30, east on the back lane (z = 22),
 // north through the transfer lane (x = 40), same direction as the road trucks.
 const TT_ROUTE=makePath((line,arc)=>{const h=Math.PI/2,P=Math.PI;arc(-27,56.1,3,-3*h,-P);line(-30,56.1,-30,25);arc(-27,25,3,-P,-h);line(-27,22,37,22);arc(37,25,3,-h,0);line(40,25,40,56.1);arc(37,56.1,3,0,h);line(37,59.1,-27,59.1);});
 const TT_SIDE=31.1,TT_TOP=4*1.5*Math.PI+TT_SIDE+64+TT_SIDE,TT_UP=3*1.5*Math.PI+TT_SIDE+64;
 // Crane handling sequence (seconds after the tractor stops). Poses: 'ship'/'tt', high = lifted clear.
-// Crane timeline units per second (.5712 slowed by 7 %, 10 %, 13 % and 5 %, then 3 % faster).
-const CRANE_RATE=.4070;
+// Crane timeline units per second (.5712 slowed by 7 %, 10 %, 13 % and 5 %, 3 % faster, then 3 % slower).
+const CRANE_RATE=.3948;
 const CRANE_SEQ=Object.freeze({keys:[[0,'start'],[3.5,'shipHigh'],[6,'shipLow'],[6.5,'shipLow'],[8.5,'shipHigh'],[13.5,'ttHigh'],[16,'ttLow'],[16.5,'ttLow'],[18.5,'ttHigh']],grab:6.3,release:16.3,total:18.5});
 // Crane positions (x) and where each crane puts the box: trailer centre x on the quay-side lane.
 const CRANES=Object.freeze([{x:-33,drop:-19.5},{x:-8,drop:1},{x:24,drop:33}]);
 // Two reach stackers face each other across the transfer lane x = 40. A loaded tractor or an empty road truck
 // enters the lane only when it is free and a stacker can serve it (an empty one for a tractor, a loaded one for a truck).
-const RS=Object.freeze({pick:5.5/1.4766,grab:2.5/1.4766,place:6.5/1.4766,release:3.1/1.4766,lane:40,z:38,units:[{x:20,rot:Math.PI},{x:60,rot:0}],reachOut:18,reachIn:13});
+// Stacker timings: animation seconds / 1.4766, then 5 % quicker (x 1.05).
+const RS_PACE=1.4766*1.05;
+const RS=Object.freeze({pick:5.5/RS_PACE,grab:2.5/RS_PACE,place:6.5/RS_PACE,release:3.1/RS_PACE,lane:40,z:38,units:[{x:20,rot:Math.PI},{x:60,rot:0}],reachOut:18,reachIn:13});
 const TT_ZONE=Object.freeze({enter:TT_UP-1.5*Math.PI-13,exit:TT_TOP+1+13.3+19});
 const TT_STOPS=Object.freeze([...CRANES.map((c,i)=>({s:mod(TT_TOP+37-c.drop+TT.trailerCenter,TT_ROUTE.length),hold:true,name:'crane'+i,crane:i})),{s:TT_UP+13+TT.trailerCenter,name:'reach',hold:true},{s:3*Math.PI+TT_SIDE+18.3,wait:7/1.656,name:'locks'}]);
 // Generic queueing mover: keeps a gap to the vehicle ahead, stops where wants(t,stop) says so.
@@ -55386,7 +55446,8 @@ function moveAlong(list,dt,L,speed,gap,stops,wants,gate,clearance){
  return list;}
 function initialTractors(){return Array.from({length:TT.count},(_,i)=>{const s=i<3?TT_STOPS[i].s-.1:TT_STOPS[2].s-22*(i-2);return {s,wait:0,stop:null,visit:0,crane:i%3,loaded:false,unlocked:false,lockVisits:0};});}
 // Each bay belongs to one crane; take top tiers before lower tiers, quay side first.
-const CARGO_ORDER=[[],[],[]];for(let k=3;k>=0;k--)for(let row=4;row>=0;row--)for(let b=0;b<7;b++){const layers=b===6?2:3+(b%3===1?1:0);if(k<layers)CARGO_ORDER[b<2?0:b<5?1:2].push(b+'-'+row+'-'+k);}
+const CARGO_ORDER=[[],[],[]];let CARGO_TOTAL=0;for(let k=3;k>=0;k--)for(let row=4;row>=0;row--)for(let b=0;b<7;b++){const layers=b===6?2:3+(b%3===1?1:0);if(k<layers)CARGO_ORDER[b<2?0:b<5?1:2].push(b+'-'+row+'-'+k);}
+CARGO_TOTAL=CARGO_ORDER.reduce((n,a)=>n+a.length,0);
 function advanceCraneCycles(state,dt){
  const cycles=(state.craneCycles||CRANES.map(()=>({cargo:null,e:0,serial:0}))).map(c=>({...c}));
  cycles.forEach((c,ci)=>{
@@ -55421,7 +55482,7 @@ function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[],craneE=[],t
  for(const t of out){if(!t.done)continue;if(t.done==='locks'){t.unlocked=true;t.lockVisits=(t.lockVisits||0)+1;}if(t.done==='reach'){t.loaded=false;t.cargo=null;t.crane=(t.crane+1)%CRANES.length;t.bayReserved=false;}t.done=null;}
  return out;}
 // Road trucks: in on the westbound lane, north through the transfer lane (x = 40), round the top, south on x = 62, out eastbound.
-const TRUCK=Object.freeze({speed:11,gap:24,count:10,kingpin:1.6,trailerCenter:7.3,axle:11.9,colors:['#eef0f0','#b8302c','#1f4f9c','#e07a1f','#2f7d4a','#5b6672','#d9b32a']});
+const TRUCK=Object.freeze({speed:11.55,gap:24,count:10,kingpin:1.6,trailerCenter:7.3,axle:11.9,colors:['#eef0f0','#b8302c','#1f4f9c','#e07a1f','#2f7d4a','#5b6672','#d9b32a']});
 // In through Gate 1 on the diagonal road, down to the main road, west to the terminal and north through the transfer
 // lane; Gate 1 is entry only, so loaded trucks leave east along the main road and swing back through the staging yard.
 const KM={};
@@ -55496,14 +55557,14 @@ function vesselPosition(progress){const departure=1+CYCLE.dwell/CYCLE.run;if(pro
 // Tugs: towing on the way in and out. Once the bulk carrier is fast at Berth 12 they let go, run off to wait off the
 // quay in front of the yacht club (separate lanes, so their tracks never cross), and after three minutes come back,
 // turn and make fast for the departure. Timeline in seconds of the dwell: let go, run out, wait, turn, run back, make fast.
-const TUG_T=Object.freeze({rel:6,go:80,wait:180,turn:12,back:80,fast:6});
+const TUG_T=Object.freeze({rel:6,go:80,wait:180,side:12,turn:12,back:80,fast:6});
 function smoothPath(pts){for(let k=0;k<3;k++){const q=[pts[0]];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];q.push([a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25],[a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75]);}q.push(pts[pts.length-1]);pts=q;}
  const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
  const L=cum[cum.length-1],pos=d=>{d=Math.max(0,Math.min(L,d));let i=1;while(i<cum.length-1&&cum[i]<d)i++;const a=pts[i-1],b=pts[i],f=(d-cum[i-1])/Math.max(1e-9,cum[i]-cum[i-1]);return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f];};
  // Heading from a chord of +/- 3 m, so it turns smoothly instead of stepping at each polyline corner.
  return {len:L,at(d){const p=pos(d),q=pos(Math.max(0,Math.min(L-6,d-3))),r=pos(Math.max(6,Math.min(L,d+3)));return [p[0],p[1],Math.atan2(-(r[1]-q[1]),r[0]-q[0])];}};}
-const TUG_PATHS=[smoothPath([[-68,-3],[-74,-24],[-55,-47],[-15,-66],[40,-73],[140,-73],[163,-68],[170,-56],[174,-53.5],[180,-53.5]]),
- smoothPath([[12,-3],[18,-22],[35,-45],[70,-62],[120,-62],[140,-60],[148,-54.5],[152,-53.5],[158,-53.5]])];
+const TUG_PATHS=[smoothPath([[-68,-3],[-74,-24],[-55,-47],[-15,-66],[40,-73],[140,-73],[160,-68],[165,-58],[169,-53.5],[180,-53.5]]),
+ smoothPath([[12,-3],[18,-22],[35,-45],[70,-62],[120,-62],[138,-60],[143,-55],[147,-53.5],[158,-53.5]])];
 function tugPosition(progress,index){const dep=1+CYCLE.dwell/CYCLE.run;
  if(progress<1||progress>=dep){// Towing: 40 m off the bow or stern. The route's polyline heading changes in small steps, which a 40 m
   // lever would turn into visible jerks, so the tugs use the ship's heading averaged over +/- 12 m of track.
@@ -55514,11 +55575,12 @@ function tugPosition(progress,index){const dep=1+CYCLE.dwell/CYCLE.run;
   turn=(a,b,f)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*ease(f);let t=(progress-1)*CYCLE.run;
  if(t<T.rel)return [A[0],A[1],turn(hA,A[2],t/T.rel),t<T.rel*.5];t-=T.rel;
  if(t<T.go){const q=P.at(P.len*ease(t/T.go));return [q[0],q[1],q[2],false];}t-=T.go;
- if(t<T.wait)return [E[0],E[1],E[2],false];t-=T.wait;
+ if(t<T.wait){// Waiting: sidestep 5.5 m in to the quay (1.1 m off it), make fast with two lines, and sidestep back out before turning.
+  const side=TUG_T.side,dz=5.5*(ease(t/side)-ease((t-(T.wait-side))/side));return [E[0],E[1]+dz,E[2],false,t>side&&t<T.wait-side];}t-=T.wait;
  if(t<T.turn)return [E[0],E[1],turn(E[2],E[2]+Math.PI,t/T.turn),false];t-=T.turn;
  if(t<T.back){const q=P.at(P.len*(1-ease(t/T.back)));return [q[0],q[1],q[2]+Math.PI,false];}t-=T.back;
  return [A[0],A[1],turn(A[2]+Math.PI,hA,t/T.fast),t>T.fast*.5];}
-const api={tugPosition,dredgerPosition,PARKING_S,TRUCK_ROUTE_LENGTH:TRUCK_ROUTE.length,THR,CYCLE,TT,TT_STOPS,TRUCK_STOPS,CRANE_SEQ,CRANES,RS,TRUCK,TT_ZONE,TRUCK_ZONE,initialTrucks,initialReach,advanceTrucks,advanceReach,truckPosition,ROUTE_LENGTH:ROUTE.length,routePoint,evaluate,advance,vesselPosition,initialTractors,advanceTractors,tractorPosition};root.PotiOps=api;if(typeof module!=='undefined')module.exports=api;
+const api={TUG_T,RS_PACE,tugPosition,dredgerPosition,PARKING_S,TRUCK_ROUTE_LENGTH:TRUCK_ROUTE.length,THR,CYCLE,TT,TT_STOPS,TRUCK_STOPS,CRANE_SEQ,CRANES,RS,TRUCK,TT_ZONE,TRUCK_ZONE,initialTrucks,initialReach,advanceTrucks,advanceReach,truckPosition,ROUTE_LENGTH:ROUTE.length,routePoint,evaluate,advance,vesselPosition,initialTractors,advanceTractors,tractorPosition};root.PotiOps=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
 
 </script><script>
@@ -55619,7 +55681,7 @@ const scene=new T.Scene();scene.background=new T.Color('#8daab3');scene.fog=new 
 const hemi=new T.HemisphereLight('#d2e8f2','#787c62',2.4);scene.add(hemi);const sun=new T.DirectionalLight('#fff0cf',3);sun.position.set(-70,130,-80);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-155,right:155,top:145,bottom:-145,near:1,far:350});sun.shadow.normalBias=.3;sun.shadow.bias=-.00015;scene.add(sun);
 const model=PotiModels.build();scene.add(model.root);const anemometers=[],shipFlags=[];model.root.traverse(o=>{if(o.userData.anemometer)anemometers.push(o);if(o.userData.flag)shipFlags.push(o);});
 // Phones cannot carry a few thousand draw calls, so the static scenery is merged per material there.
-if(!detailed)try{PotiModels.mergeStatic(model.root,[model.dockCrew.group,model.twistlocks,...model.palms,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.cranes.map(c=>c.group),...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);for(const [obj,keep] of [[model.moored,Object.values(model.cargo)],[model.moving,[]],...model.tugs.map(t=>[t,[]]),...model.trucks.flatMap(t=>[[t.truck,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]]),...model.tractors.flatMap(t=>[[t.tractor,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]])])PotiModels.mergeStatic(obj,keep,obj);
+if(!detailed)try{PotiModels.mergeStatic(model.root,[model.khibula,model.dockCrew.group,model.twistlocks,...model.palms,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.cranes.map(c=>c.group),...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);for(const [obj,keep] of [[model.moored,Object.values(model.cargo)],[model.moving,[]],...model.tugs.map(t=>[t,[]]),...model.trucks.flatMap(t=>[[t.truck,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]]),...model.tractors.flatMap(t=>[[t.tractor,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]])])PotiModels.mergeStatic(obj,keep,obj);
  for(const c of model.cranes)PotiModels.mergeParts(c.group,[c.carry]);
  for(const u of model.stackers)PotiModels.mergeParts(u,[u.userData.rs.carry]);}catch(e){console.warn('merge skipped',e);}
 const waterMaterial=new T.ShaderMaterial({fog:true,uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,{uTime:{value:0},uWave:{value:.7},uNight:{value:0},uWind:{value:8},uWindDir:{value:new T.Vector2(1,0)}}]),vertexShader:`uniform float uTime;uniform float uWave;uniform float uWind;uniform vec2 uWindDir;varying vec3 vWorld;varying vec3 vNormal;
@@ -55663,7 +55725,7 @@ function craneStep(ci,e){const c=model.cranes[ci],seq=PotiOps.CRANE_SEQ,p=handli
 function placeVehicle(pos,s,o,parts){const q=pos(s),k=pos(s-o.kingpin),r=pos(s-o.axle);parts.head.position.set(q[0],0,q[1]);parts.head.rotation.y=q[2];parts.trailer.position.set(k[0],0,k[1]);parts.trailer.rotation.y=Math.atan2(-(k[1]-r[1]),k[0]-r[0]);}
 // Both stackers: extend and lower over the transfer lane to pick or place, retract while holding or idle.
 function updateReach(){const R={...PotiOps.RS,pick:5.5,grab:2.5,place:6.5,release:3.1},rs=motion.reach&&motion.reach.units?motion.reach:PotiOps.initialReach(),out=R.reachOut,inn=R.reachIn;
- rs.units.forEach((u,k)=>{const api=model.stackers[k].userData.rs,t=u.t*1.4766;let dy=u.holding?4:6.1,h=inn,carry=u.holding;
+ rs.units.forEach((u,k)=>{const api=model.stackers[k].userData.rs,t=u.t*PotiOps.RS_PACE;let dy=u.holding?4:6.1,h=inn,carry=u.holding;
   const smooth=(a,b,v)=>{const f=seg(v,a,b);return f*f*(3-2*f);};
   if(u.phase==='pick'){
    h=lerp(inn,out,smooth(0,.8,t));dy=lerp(6.1,1.05,smooth(.8,2.2,t));
@@ -55682,7 +55744,7 @@ let gateArm=0;
 function updateGate(dt){const arms=model.gate&&model.gate.userData.arms;if(!arms||!arms.length)return;
  const GS=PotiOps.TRUCK_STOPS[0].s;let open=false;
  for(const t of motion.trucks||[]){if(t.stop==='gate'&&t.wait>0){if(t.wait<=1.5)open=true;continue;}
-  if(t.s>=GS-.5&&t.s<=GS+22)open=true;}
+  if(t.s>=GS-.5&&t.s<=GS+32)open=true;/* the trailer clears the arm at GS + 29.3 */}
  const target=open?1:0;gateArm+=Math.max(-1,Math.min(1,target-gateArm))*Math.min(1,dt*2.2);
  for(const a of arms)a.rotation.x=-a.userData.dir*gateArm*Math.PI/2;}
 // Berth supervisor patrols his circle on the apron and works the radio.
@@ -55709,9 +55771,15 @@ function updateYard(){for(const [id,p] of Object.entries(model.cargo))p.visible=
  (motion.trucks||[]).forEach((tk,i)=>{const L=model.trucks[i];placeVehicle(s=>PotiOps.truckPosition(s,tk.rsSlot),tk.s,PotiOps.TRUCK,{head:L.truck,trailer:L.trailer});
   if(tk.cargo&&model.cargo[tk.cargo])L.load.material=model.cargo[tk.cargo].material;L.load.visible=tk.loaded||rs.units.some(u=>u.phase==='place'&&u.vehicle===i&&u.t>=R.release);});}
 // Two tugs escort vessel 02 to Berth 12: one ahead on a tow line, one astern.
+// Two mooring lines per tug at the yacht-club quay (edge z = -44.75): bow and stern to bollards on the quay.
+const tugLines=[0,1].map(()=>[0,1].map(()=>{const m=new T.Mesh(new T.CylinderGeometry(1,1,1,5),new T.MeshStandardMaterial({color:'#e9e3cc',roughness:.8}));m.visible=false;m.castShadow=false;scene.add(m);return m;}));
+const tugBollards=[];{const bm=new T.MeshStandardMaterial({color:'#303a3a',metalness:.3,roughness:.6});
+ for(const q of [0,1].map(i=>PotiOps.tugPosition(1+(PotiOps.TUG_T.rel+PotiOps.TUG_T.go+PotiOps.TUG_T.wait/2)/PotiOps.CYCLE.run,i)))for(const dx of [-7.5,7.5]){const b=new T.Mesh(new T.CylinderGeometry(.27,.3,.8,10),bm);b.position.set(q[0]+dx,.5,-45.9);scene.add(b);tugBollards.push(b);}}
 function updateTugs(t){const d=Math.min(1,motion.vesselProgress)*PotiOps.ROUTE_LENGTH,bob=Math.sin(t*1.1)*(weather.wave||0)*.3;
  model.moving.updateMatrixWorld(true);
  [[42,new T.Vector3(50,6,0),-5.1],[-42,new T.Vector3(-53,6,0),5.1]].forEach(([off,anchor,end],i)=>{const ship=PotiOps.vesselPosition(motion.vesselProgress),offset=off>0?36:-36,q=PotiOps.tugPosition(motion.vesselProgress,i),tug=model.tugs[i];model.towLines[i].visible=q[3];tug.position.set(q[0],bob,q[1]);tug.rotation.y=q[2];tug.rotation.z=Math.sin(t*1.4+i)*(weather.wave||0)*.05;tug.rotation.x=Math.sin(t*1.7+i)*(weather.wave||0)*.04;tug.updateMatrixWorld(true);
+  tugLines[i].forEach((ln,k)=>{ln.visible=!!q[4];if(!ln.visible)return;const a=new T.Vector3(k?4.2:-4.4,2.1,1.9);tug.localToWorld(a);const b=tugBollards[i*2+k].position.clone();b.y=.85;
+   const d=b.clone().sub(a);ln.position.copy(a).add(b).multiplyScalar(.5);ln.scale.set(.06,d.length(),.06);ln.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());});
   _v.copy(anchor);model.moving.localToWorld(_v);_w.set(end/.85,2.5,0);tug.localToWorld(_w);const line=model.towLines[i];line.position.copy(_v).add(_w).multiplyScalar(.5);line.scale.set(.08,_v.distanceTo(_w),.08);line.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),_w.clone().sub(_v).normalize());});}
 // Visitors: from the town over the skywalk, along the waterfront and through the park to the church yard,
 // a pause for photos, then back the same way. Each keeps to the right-hand side of the path.
@@ -55747,6 +55815,7 @@ function updateModel(){for(const f of shipFlags){const p=f.geometry.attributes.p
  model.moving.rotation.z=Math.sin(t*.52)*sea*.018;model.moving.rotation.x=Math.sin(t*.73)*sea*.012;
  model.moored.position.y=Math.sin(t*.5)*sea*.07;model.moored.rotation.x=Math.sin(t*.4)*sea*.006;model.moored.rotation.z=Math.sin(t*.46+1)*sea*.004;
  if(model.dredger){const mooredSea=Math.min(sea,.7);model.dredger.position.y=Math.sin(t*.8+.6)*mooredSea*.2;model.dredger.rotation.z=Math.sin(t*.7)*mooredSea*.03;model.dredger.rotation.x=Math.sin(t*.95)*mooredSea*.022;}
+ if(model.khibula){const k=model.khibula;k.position.y=Math.sin(t*.55+.8)*Math.min(sea,1.5)*.12;k.rotation.z=Math.sin(t*.5)*Math.min(sea,1.5)*.012;k.rotation.x=Math.sin(t*.62+1)*Math.min(sea,1.5)*.008;}
  if(model.tanker){model.tanker.position.y=Math.sin(t*.45+2)*sea*.05;model.tanker.rotation.z=Math.sin(t*.5+2)*sea*.004;}updateYard();updateWalkers(motion.time);updateGate(lastDt);updateTugs(t);moorings.update();if(model.dockCrew)model.dockCrew.update(t);waterMaterial.uniforms.uTime.value=t;waterMaterial.uniforms.uWave.value=weather.wave||0;}
 
 // Mooring lines: each runs from a fairlead on the ship's side facing the quay to a bollard, with a slight sag, and
