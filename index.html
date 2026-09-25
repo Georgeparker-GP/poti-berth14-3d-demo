@@ -54375,7 +54375,7 @@ function mobileCrane(x,phase,opt={}){const P=Object.assign({z:60,rot:Math.PI,bas
  function apply(p){Object.assign(pose,p);turret.rotation.y=pose.psi;boom.rotation.x=pose.a;const endY=15+length*Math.sin(pose.a),endZ=-length*Math.cos(pose.a),rope=Math.max(.2,pose.drop-1.9);for(let i=0;i<2;i++){cables[i].position.set(i? .5:-.5,endY-rope*.5,endZ);cables[i].scale.y=rope;}hook.position.set(0,endY-pose.drop,endZ);hook.rotation.y=-pose.psi;}
  // Pose that puts the spreader centre at world (x, y, z) with the spreader aligned to world x.
  function poseFor(x,z,y){const wx=x-g.position.x,wz=z-g.position.z,ry=-g.rotation.y,dx=wx*Math.cos(ry)+wz*Math.sin(ry),dz=-wx*Math.sin(ry)+wz*Math.cos(ry),R=Math.min(length*.999,Math.hypot(dx,dz)),a=Math.acos(R/length);return {psi:Math.atan2(-dx,-dz),a,drop:2.5+15+length*Math.sin(a)-y};}
- function update(clock){const t=clock*.2+phase;apply({psi:Math.sin(t)*.65,a:.72+Math.sin(t*.8)*.08,drop:9+(1+Math.sin(t*1.5))*4});}
+ function update(clock){const t=clock*.186+phase;apply({psi:Math.sin(t)*.65,a:.72+Math.sin(t*.8)*.08,drop:9+(1+Math.sin(t*1.5))*4});}
  update(0);return {group:g,update,apply,poseFor,pose,carry,boom};
 }
 function church(){const g=new T.Group();g.position.set(90,0,-6);g.userData.kind='church';const cream='#ead9b8',trim='#c4a675';box(g,0,.25,0,10,.5,9,'#798784');box(g,0,4,0,7.5,7.5,6.5,cream);
@@ -55205,7 +55205,7 @@ function evaluate(w){
 }
 // Vessel 02 loops: ~95 s approach to Berth 12, a short stay alongside, then a new approach.
 const CYCLE=Object.freeze({run:95,dwell:90});
-function advance(state,dt,ops,paused){const next={...state};if(paused)return next;next.time+=dt;const gates=laneGates(state);next.cargoTaken=[...(state.cargoTaken||[])];next.tractors=advanceTractors(state.tractors,dt,ops.cranes.allowed,gates.tt,next.cargoTaken,(state.craneCycles||[]).map(c=>c.cargo&&c.e<16.3));next.trucks=advanceTrucks(state.trucks,dt,ops.cranes.allowed?gates.truck:gates.truck.map(g=>({...g,open:t=>t.loaded&&g.open(t)})),next.tractors);if(ops.cranes.allowed)next.reach=advanceReach(state.reach,next.tractors,next.trucks,dt);if(ops.cranes.allowed){
+function advance(state,dt,ops,paused){const next={...state};if(paused)return next;next.time+=dt;const gates=laneGates(state);next.cargoTaken=[...(state.cargoTaken||[])];next.tractors=advanceTractors(state.tractors,dt,ops.cranes.allowed,gates.tt,next.cargoTaken,(state.craneCycles||[]).map(c=>c.cargo&&c.e<16.3),(state.craneCycles||[]).map(c=>c.cargo?c.e:null));next.trucks=advanceTrucks(state.trucks,dt,ops.cranes.allowed?gates.truck:gates.truck.map(g=>({...g,open:t=>t.loaded&&g.open(t)})),next.tractors);if(ops.cranes.allowed)next.reach=advanceReach(state.reach,next.tractors,next.trucks,dt);if(ops.cranes.allowed){
  advanceCraneCycles(next,dt);
  for(const t of next.trucks){if(!t.loaded||t.rsSlot===undefined||Math.abs(t.s-KM.rs)>.1)continue;
  const other=next.reach.units[1-t.rsSlot];
@@ -55247,6 +55247,8 @@ const TT=Object.freeze({speed:7.704,gap:19,count:6,kingpin:2.1,trailerCenter:7.3
 const TT_ROUTE=makePath((line,arc)=>{const h=Math.PI/2,P=Math.PI;arc(-27,50,3,-3*h,-P);line(-30,50,-30,25);arc(-27,25,3,-P,-h);line(-27,22,37,22);arc(37,25,3,-h,0);line(40,25,40,50);arc(37,50,3,0,h);line(37,53,-27,53);});
 const TT_TOP=4*1.5*Math.PI+25+64+25,TT_UP=3*1.5*Math.PI+25+64;
 // Crane handling sequence (seconds after the tractor stops). Poses: 'ship'/'tt', high = lifted clear.
+// Crane timeline units per second (7 % slower than the earlier .5712).
+const CRANE_RATE=.5312;
 const CRANE_SEQ=Object.freeze({keys:[[0,'start'],[3.5,'shipHigh'],[6,'shipLow'],[6.5,'shipLow'],[8.5,'shipHigh'],[13.5,'ttHigh'],[16,'ttLow'],[16.5,'ttLow'],[18.5,'ttHigh']],grab:6.3,release:16.3,total:18.5});
 // Crane positions (x) and where each crane puts the box: trailer centre x on the quay-side lane.
 const CRANES=Object.freeze([{x:-33,drop:-19.5},{x:-8,drop:1},{x:24,drop:33}]);
@@ -55274,19 +55276,26 @@ function advanceCraneCycles(state,dt){
  cycles.forEach((c,ci)=>{
   if(!c.cargo){const cargo=CARGO_ORDER[ci].find(id=>!state.cargoTaken.includes(id));if(!cargo)return;c.cargo=cargo;c.e=0;c.serial++;state.cargoTaken.push(cargo);}
   const tt=state.tractors.find(t=>t.held&&t.stop==='crane'+ci&&!t.loaded);
-  let end=c.e+dt*.5712;if(c.e<13.5)end=Math.min(end,13.5);else if(!tt&&c.e<16.3)end=c.e;
+  let end=c.e+dt*CRANE_RATE;if(c.e<13.5)end=Math.min(end,13.5);else if(!tt&&c.e<16.3)end=c.e;
   if(tt&&c.e<16.3&&end>=16.3){tt.cargo=c.cargo;tt.loaded=true;tt.unlocked=false;}
   c.e=Math.min(end,18.5);
   if(c.e>=18.5){const done=state.tractors.find(t=>t.held&&t.stop==='crane'+ci&&t.cargo===c.cargo);if(done){done.held=false;done.stop=null;}c.cargo=null;}
  });state.craneCycles=cycles;
 }
-function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[]){const out=(list||initialTractors()).map(t=>({...t}));if(!allowed||dt<=0)return out;
- // Reserve the furthest reachable free bay first, filling the quay from its downstream end.
+function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[],craneE=[]){const out=(list||initialTractors()).map(t=>({...t}));if(!allowed||dt<=0)return out;
+ // Reserve the furthest reachable free bay first, filling the quay from its downstream end. A crane that already holds
+ // its box over the lane goes first: the tractor stops there instead of driving past to a crane still working the ship.
+ const L=TT_ROUTE.length,end=TT_STOPS[0].s,hi=CRANE_SEQ.keys[5][0];
  const claimed=new Set(out.filter(t=>!t.loaded&&(t.wait>0||t.bayReserved)).map(t=>t.crane));
- const end=TT_STOPS[0].s;
- const empty=out.filter(t=>!t.loaded&&!t.wait&&!t.held&&!t.bayReserved).sort((a,b)=>mod(end-a.s,TT_ROUTE.length)-mod(end-b.s,TT_ROUTE.length));
- for(const t of empty){const reach=mod(end-t.s,TT_ROUTE.length);const choices=CRANES.map((_,ci)=>ci).filter(ci=>!claimed.has(ci)&&(CARGO_ORDER[ci].some(id=>!taken.includes(id))||craneReady[ci])&&mod(TT_STOPS[ci].s-t.s,TT_ROUTE.length)<=reach+.01);
- if(choices.length){t.crane=choices[0];t.bayReserved=true;claimed.add(t.crane);} }
+ const hasWork=ci=>CARGO_ORDER[ci].some(id=>!taken.includes(id))||craneReady[ci];
+ const holdsBox=ci=>craneReady[ci]&&craneE[ci]>=hi;
+ const empty=out.filter(t=>!t.loaded&&!t.wait&&!t.held).sort((a,b)=>mod(end-a.s,L)-mod(end-b.s,L));
+ for(const t of empty){const reach=mod(end-t.s,L),ok=ci=>hasWork(ci)&&mod(TT_STOPS[ci].s-t.s,L)<=reach+.01;
+  if(t.bayReserved)claimed.delete(t.crane);
+  const free=CRANES.map((_,ci)=>ci).filter(ci=>!claimed.has(ci)&&ok(ci)),ready=free.filter(holdsBox),next=ready.length?ready[ready.length-1]:free[0];
+  if(!t.bayReserved||!ok(t.crane)){if(free.length){t.crane=next;t.bayReserved=true;}}
+  else if(ready.length&&!holdsBox(t.crane))t.crane=next;
+  if(t.bayReserved)claimed.add(t.crane);}
  for(const t of out)if(!t.loaded&&!t.wait&&!craneReady[t.crane]&&!CARGO_ORDER[t.crane].some(id=>!taken.includes(id))){t.bayReserved=false;const ci=CARGO_ORDER.findIndex(a=>a.some(id=>!taken.includes(id)));if(ci>=0)t.crane=ci;}
 
  moveAlong(out,dt,TT_ROUTE.length,TT.speed,TT.gap,TT_STOPS,(t,st)=>st.name==='locks'?t.loaded&&!t.unlocked:st.name==='reach'?t.loaded&&t.unlocked:(!t.loaded&&t.crane===st.crane&&(craneReady[st.crane]||CARGO_ORDER[st.crane].some(id=>!taken.includes(id)))),gate,(t,s)=>!out.some(o=>o!==t&&vehicleFootprint(t,s,false).some(a=>vehicleFootprint(o,o.s,false).some(b=>footprintsOverlap(a,b)))));
@@ -55354,7 +55363,8 @@ function laneGates(state){const rs=state.reach||initialReach(),TL=TT_ROUTE.lengt
 function pocketPosition(route,s,slot,enter,exit){const L=route.length,q=route.at(mod(s,L));if(slot===undefined)return q;const d=mod(s-enter,L),len=mod(exit-enter,L);if(d>len)return q;
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};const offset=v=>6*(slot?1:-1)*smooth(v/9)*smooth((len-v)/13);q[0]+=offset(d);const r=route.at(mod(s+.1,L));q[2]=Math.atan2(-(r[1]-q[1]),r[0]+offset(d+.1)-q[0]);return q;}
 function truckPosition(s,slot){return pocketPosition(TRUCK_ROUTE,s,slot,TRUCK_ZONE.enter,TRUCK_ZONE.exit-19);}
-function tractorPosition(s,slot){return pocketPosition(TT_ROUTE,s,slot,TT_ZONE.enter+10,TT_ZONE.exit-19);}
+// The pocket closes before the quay lane (TT_TOP), so a tractor parked under crane 2 sits exactly under the drop point.
+function tractorPosition(s,slot){return pocketPosition(TT_ROUTE,s,slot,TT_ZONE.enter+10,TT_TOP-1.5);}
 // Point on the vessel route; beyond either end it continues straight (used for the tugs).
 function routePoint(d){const L=ROUTE.length;if(d>=0&&d<=L)return ROUTE.at(d);const e=ROUTE.at(d<0?0:L),k=d<0?d:d-L;return [e[0]+Math.cos(e[2])*k,e[1]-Math.sin(e[2])*k,e[2]];}
 function vesselPosition(progress){const departure=1+CYCLE.dwell/CYCLE.run;if(progress<=departure)return ROUTE.at(Math.max(0,Math.min(1,progress))*ROUTE.length);return OUTBOUND.at(Math.min(OUTBOUND.length,(progress-departure)*ROUTE.length));}
