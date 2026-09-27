@@ -55198,6 +55198,17 @@ function flatWagon(root,x,z){const g=new T.Group();g.name='Flat wagon';g.positio
   box(g,sx*(L/2+.35),1.1,0,.6,.18,.3,'#2a2c2e');
   const bx=sx*(L/2-3);box(g,bx,.95,0,3.2,.35,2.2,dark);for(const ax of [-.9,.9])for(const sd of [-1,1]){const w=cylinder(g,bx+ax,.92,sd*.72,.46,.14,'#3b3e41');w.rotation.x=Math.PI/2;}}
  return g;}
+// Ships at anchor at night: white anchor lights forward and aft, deck floodlights along the hatches and lit bridge
+// windows. All are glow sprites, so they show only at night; sizes are divided by the model scale.
+function anchorLights(ship){const k=1/(ship.scale.x||1),b=new T.Box3().setFromObject(ship),x0=b.min.x/ship.scale.x,x1=b.max.x/ship.scale.x;
+ // Own materials without fog: a ship at anchor 300 m out still shows its lights through the night haze.
+ const white=new T.SpriteMaterial({map:poolTex,color:'#fff6e0',transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false}),
+  warm=new T.SpriteMaterial({map:poolTex,color:'#ffc978',transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:.9,fog:false});
+ const L=(m,x,y,z,sz)=>{const sp=new T.Sprite(m);sp.position.set(x,y,z);sp.scale.setScalar(sz*k);sp.visible=false;ship.add(sp);glows.push(sp);};
+ L(white,x1-6,14,0,4);L(white,x0+4,27,0,4);                                       // anchor lights, forward and aft
+ for(let x=-28;x<=32;x+=15)for(const z of [-6.8,6.8])L(warm,x,9.5,z,x%2?5:4.2);    // deck floodlights
+ for(let x=-44;x<=-36;x+=2)for(const z of [-8.7,8.7])L(warm,x,20.8,z,1.6);          // bridge windows
+ for(const z of [-9,9])L(warm,-40,16,z,6);L(white,x0+3,12,0,3);}
 function yardDetails(root){
  const rs=reachStacker(126,50,false,'#c92d2b');rs.name='Stationary red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=-Math.PI/2;rs.userData.rs.setBoom(4.5,11);rs.userData.rs.carry.removeFromParent();root.add(rs);
  const msc=containerMat('#b8a25c','MSC');const g=new T.Group();g.name='MSC container stacks';root.add(g);
@@ -55246,7 +55257,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  root.add(terminalBuilding());
  // Anchorage clear of both the breakwater and the central approach channel.
  const anchorage=[[vessel('#426f9b',.65,'maersk'),-355,-160,.12],[tanker(),-365,-340,.12],[bulkVessel(.65),-225,-420,.12],[roroDioskuria(),-365,-30,.12]];
- anchorage.forEach(([ship,x,z,a],i)=>{if(i===1)ship.scale.setScalar(.7);if(i===3)ship.scale.setScalar(.65);ship.position.set(x,0,z);ship.rotation.y=a;ship.name='Anchorage vessel '+(i+1);ship.userData.anchored=true;root.add(ship);});
+ anchorage.forEach(([ship,x,z,a],i)=>{if(i===1)ship.scale.setScalar(.7);if(i===3)ship.scale.setScalar(.65);ship.position.set(x,0,z);ship.rotation.y=a;ship.name='Anchorage vessel '+(i+1);ship.userData.anchored=true;anchorLights(ship);root.add(ship);});
 
  for(let b=0;b<1;b++)for(let r=0;r<3;r++)for(let k=0;k<2;k++)container(root,-8+b*10.5,1.55+k*2.85,46.6-r*2.85,(r*2+k+b)%6);
  // Church on its own small plot south of the land link, with a lawn and a path to the road.
@@ -55264,8 +55275,8 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
   box(root,97.5,.08,gz,3.5,.06,2.4,'#cfc2a0');}
  churchPark(root);footbridge(root);
  const walkers=[['#c0392b','#2c3e50','#3b2a20'],['#2e86c1','#34495e','#1c1c1c'],['#f1c40f','#4a4a4a','#6b4a2b'],['#27ae60','#2c3e50','#2a2a2a'],['#8e44ad','#555b61','#8a6a3a'],['#e67e22','#1f2d3a','#1c1c1c'],['#ecf0f1','#3d4f63','#4a3222']].map(([a,b,c])=>{const p=pedestrian(a,b,c);root.add(p);return p;});
- // Reach stackers face each other across the transfer lanes (tractors at x = 34 / 46, trucks at 40 / 52).
- const stackers=[[17,Math.PI],[61,0]].map(([x,r])=>{const u=reachStacker(x,37,false);u.rotation.y=r;root.add(u);return u;});
+ // Reach stackers face each other across the tractor lane (x = 29.7).
+ const stackers=[[20,Math.PI],[60,0]].map(([x,r])=>{const u=reachStacker(x,38,false);u.rotation.y=r;root.add(u);return u;});
  const truckColors=['#eef0f0','#b8302c','#1f4f9c','#e07a1f','#2f7d4a','#5b6672','#d9b32a','#8e44ad','#16a085','#34495e'];
  const truckCount=(root.PotiOps&&root.PotiOps.TRUCK&&root.PotiOps.TRUCK.count)||truckColors.length;
  const trucks=Array.from({length:truckCount},(_,i)=>truckColors[i%truckColors.length]).map(c=>{const truck=roadTruck(c),tr=semiTrailer();root.add(truck);root.add(tr);return {truck,trailer:tr,load:tr.userData.load};});
@@ -55287,7 +55298,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  meshFence(root,76,62,236,62,[10,34]);
  // Chain-link fence along the south side of the land road, from the pier corner to the far end.
  meshFence(root,70,6.3,258,6.3);meshFence(root,70,3.8,70,6.3);
- kiosk(root,68.5,8,0);yardOffice(root,2.5,43.75);
+ kiosk(root,65,8,0);yardOffice(root,2.5,43.75);
  label(root,'GATE 1',100,11,67,16,'#294c50');label(root,'YACHT CLUB',141,9.5,-14,16,'#294c50');
  const tk=tankerJetty(root);label(root,'TANKER BERTH',170,1.5,-92,20,'#294c50');
  const cranes=[-33,-8,24].map((x,i)=>{const c=mobileCrane(x,i*1.4);c.apply(c.poseFor([-24,1,33][i],59.1,30));root.add(c.group);return c;});
@@ -55363,7 +55374,7 @@ function evaluate(w){
 }
 // Vessel 02 loops: ~136 s approach to Berth 12 (tug-assisted, 30 % slower than before), a stay alongside, then departure.
 const CYCLE=Object.freeze({run:136,dwell:364});
-function advance(state,dt,ops,paused){const next={...state};if(paused)return next;next.time+=dt;const gates=laneGates(state);next.cargoTaken=[...(state.cargoTaken||[])];next.tractors=advanceTractors(state.tractors,dt,ops.cranes.allowed,gates.tt,next.cargoTaken,(state.craneCycles||[]).map(c=>c.cargo&&c.e<16.3),(state.craneCycles||[]).map(c=>c.cargo?c.e:null),state.trucks||[]);gates.live=next.tractors;next.trucks=advanceTrucks(state.trucks,dt,ops.cranes.allowed?gates.truck:gates.truck.map(g=>({...g,open:t=>t.loaded&&g.open(t)})),next.tractors);if(ops.cranes.allowed)next.reach=advanceReach(state.reach,next.tractors,next.trucks,dt);if(ops.cranes.allowed){
+function advance(state,dt,ops,paused){const next={...state};if(paused)return next;next.time+=dt;const gates=laneGates(state);next.cargoTaken=[...(state.cargoTaken||[])];next.tractors=advanceTractors(state.tractors,dt,ops.cranes.allowed,gates.tt,next.cargoTaken,(state.craneCycles||[]).map(c=>c.cargo&&c.e<16.3),(state.craneCycles||[]).map(c=>c.cargo?c.e:null),state.trucks||[]);next.trucks=advanceTrucks(state.trucks,dt,ops.cranes.allowed?gates.truck:gates.truck.map(g=>({...g,open:t=>t.loaded&&g.open(t)})),next.tractors);if(ops.cranes.allowed)next.reach=advanceReach(state.reach,next.tractors,next.trucks,dt);if(ops.cranes.allowed){
  advanceCraneCycles(next,dt);
  // Endless demo: when every box is ashore and nothing is in hand, pause 30 s, then the ship is full again.
  {const idle=next.cargoTaken.length>=CARGO_TOTAL&&(next.craneCycles||[]).every(c=>!c.cargo)&&!next.tractors.some(t=>t.loaded)&&next.reach.units.every(u=>!u.holding&&u.phase==='idle');
@@ -55421,18 +55432,16 @@ const CRANES=Object.freeze([{x:-33,drop:-19.5},{x:-8,drop:1},{x:24,drop:33}]);
 // enters the lane only when it is free and a stacker can serve it (an empty one for a tractor, a loaded one for a truck).
 // Stacker timings: animation seconds / 1.4766, then 5 % quicker (x 1.05).
 const RS_PACE=1.4766*1.05;
-// Four lanes: tractors at x = 34 / 46, trucks at x = 40 / 52. The west stacker (moved 3 m towards the yard office)
-// picks from the tractor at 34 and reaches over it to the truck at 40; the east one (1 m further east) picks at 46 and places at 52.
-// pick / place = boom reach from the pivot, inn = parked reach, hold = tip height while carrying.
-const RS=Object.freeze({pick:5.5/RS_PACE,grab:2.5/RS_PACE,place:6.5/RS_PACE,release:3.1/RS_PACE,lane:40,z:37,units:[{x:17,rot:Math.PI,pick:21,place:27,inn:13,hold:5},{x:61,rot:0,pick:19,place:13,inn:10,hold:4}],reachOut:18,reachIn:13});
-const TT_LANES=[-6,6],TRUCK_LANES=[0,12];
+const RS=Object.freeze({pick:5.5/RS_PACE,grab:2.5/RS_PACE,place:6.5/RS_PACE,release:3.1/RS_PACE,lane:40,z:38,units:[{x:20,rot:Math.PI},{x:60,rot:0}],reachOut:18,reachIn:13});
 const TT_ZONE=Object.freeze({enter:TT_UP-1.5*Math.PI-13,exit:TT_TOP+1+13.3+19});
-const TT_STOPS=Object.freeze([...CRANES.map((c,i)=>({s:mod(TT_TOP+37-c.drop+TT.trailerCenter,TT_ROUTE.length),hold:true,name:'crane'+i,crane:i})),{s:TT_UP+12+TT.trailerCenter,name:'reach',hold:true},{s:3*Math.PI+TT_SIDE+18.3,wait:7/1.656,name:'locks'}]);
+const TT_STOPS=Object.freeze([...CRANES.map((c,i)=>({s:mod(TT_TOP+37-c.drop+TT.trailerCenter,TT_ROUTE.length),hold:true,name:'crane'+i,crane:i})),{s:TT_UP+13+TT.trailerCenter,name:'reach',hold:true},{s:3*Math.PI+TT_SIDE+18.3,wait:7/1.656,name:'locks'}]);
 // Generic queueing mover: keeps a gap to the vehicle ahead, stops where wants(t,stop) says so.
 function moveAlong(list,dt,L,speed,gap,stops,wants,gate,clearance){
  for(const t of list){if(t.zoneEnd!==undefined&&mod(t.s-t.zoneEnd,L)<L/2){delete t.rsSlot;delete t.zoneEnd;delete t.mergeAt;t.parallel=false;}if(t.held)continue;if(t.wait>0){t.wait=Math.max(0,t.wait-dt);if(t.wait===0)t.done=t.stop;continue;}
-  const followingGap=gap===19?(t.s>=TT_TOP&&t.s<=TT_STOPS[0].s+2?19:22):gap;let ahead=Infinity;for(const o of list)if(o!==t){if(t.parallel&&o.parallel&&t.rsSlot!==o.rsSlot&&t.rsSlot!==undefined&&o.rsSlot!==undefined)continue;if(gap===TT.gap&&t.bypass&&!o.bypass&&o.s>=TT_TOP-1&&o.s<=BYPASS.sM)continue;const d=mod(o.s-t.s,L);if(d>1e-6)ahead=Math.min(ahead,d);else if(list.indexOf(o)<list.indexOf(t))ahead=0;}
-  let move=Math.min(speed*dt,Math.max(0,ahead-followingGap));if(t.mergeAt!==undefined){const d=mod(t.mergeAt-t.s,L),mg=followingGap+3+(gap===TRUCK.gap?12:0);if(d<move&&list.some(o=>o!==t&&o.rsSlot!==t.rsSlot&&(mod(o.s-t.mergeAt,L)<mg||(Math.abs(o.s-t.s)<.05&&list.indexOf(o)<list.indexOf(t))))){move=Math.max(0,d-.01);}}
+  const followingGap=gap===19?(t.s>=TT_TOP&&t.s<=TT_STOPS[0].s+2?19:22):gap;let ahead=Infinity;for(const o of list)if(o!==t){if(t.parallel&&o.parallel&&t.rsSlot!==o.rsSlot&&t.rsSlot!==undefined&&o.rsSlot!==undefined)continue;
+   // Quay lane and bypass lane run side by side: tractors in the other lane there are not queued behind (footprints still checked).
+   if(gap===TT.gap&&!t.bypass!==!o.bypass){const b=t.bypass?t:o,m=t.bypass?o:t;if(m.s>=TT_TOP-1&&BYPASS.on(b.s)&&mod(b.s-BYPASS.sR,L)<=mod(L-BYPASS.sR,L))continue;}const d=mod(o.s-t.s,L);if(d>1e-6)ahead=Math.min(ahead,d);else if(list.indexOf(o)<list.indexOf(t))ahead=0;}
+  let move=Math.min(speed*dt,Math.max(0,ahead-followingGap));if(t.mergeAt!==undefined){const d=mod(t.mergeAt-t.s,L);if(d<move&&list.some(o=>o!==t&&o.rsSlot!==t.rsSlot&&(mod(o.s-t.mergeAt,L)<followingGap+3||(Math.abs(o.s-t.s)<.05&&list.indexOf(o)<list.indexOf(t))))){move=Math.max(0,d-.01);}}
   for(const gt of (gate?(Array.isArray(gate)?gate:[gate]):[])){const d=mod(gt.s-t.s,L);if(d>1e-6&&d<=move){if(!gt.open(t))move=Math.max(0,d-.01);else gt.entered&&gt.entered(t);}}
   if(clearance&&move>0&&!clearance(t,mod(t.s+move,L))){let lo=0,hi=move;for(let i=0;i<8;i++){const m=(lo+hi)/2;if(clearance(t,mod(t.s+m,L)))lo=m;else hi=m;}move=Math.max(0,lo-.02);}
   if(move>0)t.stop=null;
@@ -55470,17 +55479,20 @@ function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[],craneE=[],t
   if(t.bayReserved)claimed.add(t.crane);}
  for(const t of out)if(!t.loaded&&!t.wait&&!craneReady[t.crane]&&!CARGO_ORDER[t.crane].some(id=>!taken.includes(id))){t.bayReserved=false;const ci=CARGO_ORDER.findIndex(a=>a.some(id=>!taken.includes(id)));if(ci>=0)t.crane=ci;}
 
- for(const t of out)if(t.bypass&&mod(t.s-BYPASS.sE,L)>TT.axle+3&&mod(t.s-BYPASS.sE,L)<L/2)t.bypass=0;
- const c2=TT_STOPS[2].s,sR=TT_STOPS[3].s;
- for(const t of out){if(t.loaded||t.wait||t.held||Math.abs(t.s-sR)>.05||!t.bayReserved||t.crane===2){if(Math.abs(t.s-sR)<=.05&&!t.held&&!t.wait)t.bypass=0;continue;}
-  const blocked=out.some(o=>o!==t&&((o.held&&o.stop==='crane2')||(o.crane===2&&o.bayReserved&&!o.loaded&&mod(c2-o.s,L)<mod(c2-sR,L))));
-  t.bypass=blocked?(t.rsSlot===undefined?3:t.rsSlot+1):0;}
+ // Bypass: decided as an empty tractor pulls away from the stacker; cleared once its trailer is back on the loop.
+ for(const t of out)if(t.bypass&&!BYPASS.on(t.s)&&mod(t.s-BYPASS.sJ,L)>TT.axle+3&&mod(t.s-BYPASS.sJ,L)<L/2)t.bypass=0;
+ {const sR=TT_STOPS[3].s;for(const t of out){if(Math.abs(t.s-sR)>.05||t.held||t.wait)continue;
+  if(t.loaded||!t.bayReserved||t.crane===2){t.bypass=0;continue;}
+  const up=j=>out.some(o=>o!==t&&((o.held&&o.stop==='crane'+j)||(o.crane===j&&o.bayReserved&&!o.loaded&&mod(TT_STOPS[j].s-o.s,L)<mod(TT_STOPS[j].s-sR,L))));
+  const blocked=[1,2].some(j=>j>t.crane&&up(j));t.bypass=blocked?(t.rsSlot===undefined?3:t.rsSlot+1):0;}}
  moveAlong(out,dt,TT_ROUTE.length,TT.speed,TT.gap,TT_STOPS,(t,st)=>st.name==='locks'?t.loaded&&!t.unlocked:st.name==='reach'?t.loaded&&t.unlocked:(!t.loaded&&t.crane===st.crane&&!(t.bypass&&st.crane===2)&&(craneReady[st.crane]||CARGO_ORDER[st.crane].some(id=>!taken.includes(id)))),[gate,
   // Top of the transfer lane: a truck leaving the west stacker turns east across the tractors' lane, so the crossing
   // is held by whoever enters it first (see crossingByTruck / crossingByTractor).
-  {s:TT_STOPS[3].s+.02,open:()=>!trucks.some(crossingByTruck)},
-  // The east truck's trailer swings towards the east pocket as it turns out; a tractor waits for it short of the pocket.
-  {s:TT_STOPS[3].s-14,open:t=>t.rsSlot!==1||!trucks.some(eastSwingTruck)}],(t,s)=>!out.some(o=>o!==t&&vehicleFootprint(t,s,false).some(a=>vehicleFootprint(o,o.s,false).some(b=>footprintsOverlap(a,b)))));
+  {s:TT_STOPS[3].s+.5,open:()=>!trucks.some(crossingByTruck)},
+  // West end: a tractor loading at crane 0 in the bypass lane stands right at the corner, so a quay-lane tractor
+  // waits 12 m short of the corner (clear of the trailer's tail swing) while one is at, pulling up to, or turning out
+  // of that stop.
+  {s:L-12,open:t=>!!t.bypass||!out.some(o=>o.bypass&&o.crane===0&&BYPASS.on(o.s)&&mod(o.s-(TT_STOPS[0].s-18),L)<18.3+BYPASS.sJ+6)}],(t,s)=>!out.some(o=>o!==t&&vehicleFootprint(t,s,false).some(a=>vehicleFootprint(o,o.s,false).some(b=>footprintsOverlap(a,b)))));
  for(const t of out){if(!t.done)continue;if(t.done==='locks'){t.unlocked=true;t.lockVisits=(t.lockVisits||0)+1;}if(t.done==='reach'){t.loaded=false;t.cargo=null;t.crane=(t.crane+1)%CRANES.length;t.bayReserved=false;}t.done=null;}
  return out;}
 // Road trucks: in on the westbound lane, north through the transfer lane (x = 40), round the top, south on x = 62, out eastbound.
@@ -55495,8 +55507,8 @@ const TRUCK_ROUTE=makePath((rawLine,rawArc)=>{const h=Math.PI/2,P=Math.PI;let di
  let last=[120,100];for(let i=1;i<=30;i++){const t=i/30,u=1-t,p=[u*u*u*120+3*u*u*t*91+3*u*t*t*122+t*t*t*110,u*u*u*100+3*u*u*t*100+3*u*t*t*74+t*t*t*67];line(...last,...p);last=p;}
  KM.gate=dist;line(110,67,92.1,56.67);arc(96.1,49.74,8,2*P/3,P);
  KM.crossIn=dist+24.24;line(88.1,49.74,88.1,22.5);arc(80.1,22.5,8,0,-h);
- KM.enter=dist;line(80.1,14.5,43,14.5);arc(43,17.5,3,-h,-P);
- KM.rs=dist+26.8;line(40,17.5,40,47.5);arc(45.5,47.5,5.5,P,h);KM.exit=dist+24.5;line(45.5,53,70,53);arc(70,49,4,h,0);
+ KM.enter=dist+14;line(80.1,14.5,43,14.5);arc(43,17.5,3,-h,-P);
+ KM.rs=dist+27.8;line(40,17.5,40,49);arc(44,49,4,P,h);KM.exit=dist+24;line(44,53,70,53);arc(70,49,4,h,0);
  line(74,49,74,29.5);arc(78,29.5,4,P,1.5*P);KM.crossOut=dist+10.1;line(78,25.5,242,25.5);arc(242,33.5,8,-h,0);
  KM.unload=dist+30;line(250,33.5,250,90);arc(240,90,10,0,h);
 });
@@ -55510,23 +55522,20 @@ const inSpan=(s,c,back,fwd,L)=>mod(s-(c-back),L)<=back+fwd;
 function vehicleFootprint(t,s,truck){const cfg=truck?TRUCK:TT,pos=truck?truckPosition:tractorPosition,q=pos(s,t.rsSlot,t.bypass),k=pos(s-cfg.kingpin,t.rsSlot,t.bypass),r=pos(s-cfg.axle,t.rsSlot,t.bypass),a=Math.atan2(-(k[1]-r[1]),k[0]-r[0]),off=truck?5.7:5.2;
  return [[q[0],q[1],q[2],3.1,1.65],[k[0]-Math.cos(a)*off,k[1]+Math.sin(a)*off,a,truck?6.8:5.8,1.65]];}
 function footprintsOverlap(a,b){for(const r of [a,b])for(const t of [r[2],r[2]+Math.PI/2]){const ux=Math.cos(t),uz=-Math.sin(t),d=Math.abs((a[0]-b[0])*ux+(a[1]-b[1])*uz),rad=v=>v[3]*Math.abs(Math.cos(v[2])*ux-Math.sin(v[2])*uz)+v[4]*Math.abs(Math.sin(v[2])*ux+Math.cos(v[2])*uz);if(d>=rad(a)+rad(b))return false;}return true;}
-function truckClearance(t,s,tractors){const truck=vehicleFootprint(t,s,true);return !truck.some(a=>footprintsOverlap(a,[68.5,8,0,5.3,3.05]))&&!tractors.some(tt=>{
+function truckClearance(t,s,tractors){const truck=vehicleFootprint(t,s,true);return !truck.some(a=>footprintsOverlap(a,[65,8,0,5.3,3.05]))&&!tractors.some(tt=>{
  // Stop 0.5 m short of a tractor, so a trailer swinging wide while it changes lanes still clears the truck's cab.
- // A tractor standing at its stacker keeps its plain outline: the trucks' turn out of the lanes passes it closely by design.
- const mg=Math.abs(tt.s-TT_STOPS[3].s)<.1?0:.5;for(const b of vehicleFootprint(tt,tt.s,false)){const w=[b[0],b[1],b[2],b[3]+mg,b[4]+mg];if(truck.some(a=>footprintsOverlap(a,w)))return true;}return false;});}
+ for(const b of vehicleFootprint(tt,tt.s,false)){const w=[b[0],b[1],b[2],b[3]+.5,b[4]+.5];if(truck.some(a=>footprintsOverlap(a,w)))return true;}return false;});}
 // Crossing at the top of the transfer lane (tractors north onto the quay lane, trucks east onto the top lane).
-// A vehicle holds it only once past its own gate (stop + 0.5), so two vehicles waiting at their gates never block each other.
-const crossingByTruck=k=>{const d=mod(k.s-KM.rs,TRUCK_ROUTE.length);return d>.55&&d<KM.exit+6-KM.rs;};
-const eastSwingTruck=k=>{if(k.rsSlot!==1)return false;const d=mod(k.s-KM.rs,TRUCK_ROUTE.length);return d>.55&&d<16;},eastArrivingTractor=t=>t.rsSlot===1&&t.s>=TT_STOPS[3].s-14&&t.s<TT_STOPS[3].s-.01;
-const crossingByTractor=t=>{const d=mod(t.s-TT_STOPS[3].s,TT_ROUTE.length);return d>.05&&d<TT_TOP+14-TT_STOPS[3].s;};
+const crossingByTruck=k=>{const d=mod(k.s-KM.rs,TRUCK_ROUTE.length);return d>.3&&d<KM.exit+6-KM.rs;};
+const crossingByTractor=t=>{const d=mod(t.s-TT_STOPS[3].s,TT_ROUTE.length);return d>.3&&d<TT_TOP+14-TT_STOPS[3].s;};
 function advanceTrucks(list,dt,gate,tractors=[]){const L=TRUCK_ROUTE.length,out=(list||initialTrucks()).map(t=>({...t}));if(dt<=0)return out;
  let busyIn=out.some(t=>inSpan(t.s,CROSS_IN,9.9,25,L)),busyOut=out.some(t=>inSpan(t.s,CROSS_OUT,9.9,25,L));
  const loadedApproaching=out.some(t=>t.loaded&&(t.rsSlot===undefined||t.s>KM.rs+20)&&inSpan(t.s,CROSS_OUT,65,25,L));
  // A truck may take the junction only if the crossing arm is clear and it will not have to stop inside it.
  const ahead=t=>{let d=Infinity;for(const o of out)if(o!==t){const g=mod(o.s-t.s,L);if(g>1e-6)d=Math.min(d,g);}return d;};
- const junction=[{s:KM.rs+.5,open:t=>!tractors.some(crossingByTractor)&&!(t.rsSlot===1&&tractors.some(eastArrivingTractor))},{s:CROSS_IN-10,open:t=>!busyOut&&!loadedApproaching&&ahead(t)>TRUCK.gap+38,entered:()=>{busyIn=true;}},
+ const junction=[{s:KM.rs+.5,open:()=>!tractors.some(crossingByTractor)},{s:CROSS_IN-10,open:t=>!busyOut&&!loadedApproaching&&ahead(t)>TRUCK.gap+38,entered:()=>{busyIn=true;}},
                  {s:CROSS_OUT-10,open:t=>!busyIn&&ahead(t)>TRUCK.gap+38,entered:()=>{busyOut=true;}}];
- moveAlong(out,dt,L,TRUCK.speed,TRUCK.gap,TRUCK_STOPS,t=>!t.loaded,gate?[...(Array.isArray(gate)?gate:[gate]),...junction]:junction,(t,s)=>truckClearance(t,s,tractors)&&!out.some(o=>o!==t&&vehicleFootprint(t,s,true).some(a=>vehicleFootprint(o,o.s,true).some(b=>footprintsOverlap(a,b)))));
+ moveAlong(out,dt,L,TRUCK.speed,TRUCK.gap,TRUCK_STOPS,t=>!t.loaded,gate?[...(Array.isArray(gate)?gate:[gate]),...junction]:junction,(t,s)=>truckClearance(t,s,tractors));
  for(const t of out){if(t.done==='rs')t.loaded=true;t.done=null;if(t.loaded&&t.prev!==undefined&&t.s!==t.prev&&mod(TRUCK_UNLOAD-t.prev,L)<mod(t.s-t.prev,L)+1e-9)t.loaded=false;}
  return out;}
 const inZone=(s,z,L)=>mod(s-z.enter,L)<=mod(z.exit-z.enter,L);
@@ -55543,33 +55552,33 @@ function advanceReach(rs,tractors,trucks,dt){rs=rs&&rs.units?{...rs,units:rs.uni
  if(ki>=0&&u.holding){Object.assign(trucks[ki],{held:false,wait:RS.place,cargo:u.cargo});Object.assign(u,{phase:'place',t:0,vehicle:ki});}
  }
  return rs;}
-// Transfer lanes: each stacker has its own tractor lane and truck lane, so two tractors and two trucks can stand at the
-// stackers together. One tractor and one truck ramp into the pockets at a time. The west truck lane (x = 40) crosses
-// the end of the tractors' back lane, so it is held against a tractor turning into either pocket, and vice versa.
-function laneGates(state){const rs=state.reach||initialReach(),TL=TT_ROUTE.length,KL=TRUCK_ROUTE.length,G={live:null};
- const ttIn=()=>(G.live||state.tractors||[]).filter(t=>inZone(t.s,TT_ZONE,TL)),tkIn=(state.trucks||[]).filter(t=>inZone(t.s,TRUCK_ZONE,KL)&&t.s<KM.rs+23);
- const ttTaken=new Set(ttIn().map(t=>t.rsSlot).filter(k=>k!==undefined)),tkTaken=new Set(tkIn.map(t=>t.rsSlot).filter(k=>k!==undefined));
- let ttRamp=ttIn().some(v=>v.rsSlot!==undefined&&v.s<TT_STOPS[3].s-2),tkRamp=tkIn.some(v=>v.rsSlot!==undefined&&v.s<KM.rs-2);
- const truckUpWest=()=>tkIn.some(k=>k.rsSlot===0&&k.s<KM.rs-.5),tractorIntoEast=()=>ttIn().some(v=>v.rsSlot!==undefined&&v.s<TT_STOPS[3].s-.5);
- const reserveTT=t=>{if(ttRamp)return false;const k=[0,1].sort((a,b)=>(rs.units[a].holding?1:0)-(rs.units[b].holding?1:0)).find(k=>!ttTaken.has(k)&&!truckUpWest());
-  if(k===undefined)return false;t.pendingSlot=k;return true;};
- const reserveTK=t=>{if(tkRamp)return false;const tt=ttIn(),serve=k=>{const u=rs.units[k];return u.holding||u.phase==='pick'||tt.some(v=>v.rsSlot===k&&v.loaded);};
-  const k=[0,1].filter(k=>!tkTaken.has(k)&&serve(k)&&!(k===0&&tractorIntoEast())).sort((a,b)=>(rs.units[b].holding?1:0)-(rs.units[a].holding?1:0))[0];
-  if(k===undefined)return false;t.pendingSlot=k;return true;};
- const enter=(t,kind)=>{t.rsSlot=t.pendingSlot;delete t.pendingSlot;t.parallel=true;if(kind==='tt'){ttTaken.add(t.rsSlot);ttRamp=true;}else{tkTaken.add(t.rsSlot);tkRamp=true;}t.zoneEnd=kind==='tt'?TT_ZONE.exit:TRUCK_ZONE.exit;t.mergeAt=(kind==='tt'?TT_STOPS[3].s:KM.rs)+.5;};
- G.tt={s:TT_ZONE.enter,open:reserveTT,entered:t=>enter(t,'tt')};G.truck=[{s:PARKING_S,open:()=>true},{s:TRUCK_ZONE.enter,open:reserveTK,entered:t=>enter(t,'truck')}];return G;}
+// Shared transfer lane: one vehicle at a time, and only when a stacker can serve it.
+function laneGates(state){const rs=state.reach||initialReach(),TL=TT_ROUTE.length,KL=TRUCK_ROUTE.length;
+ const tt=(state.tractors||[]).filter(t=>inZone(t.s,TT_ZONE,TL)),tk=(state.trucks||[]).filter(t=>inZone(t.s,TRUCK_ZONE,KL)&&t.s<KM.rs+23);
+ const truckSlots=new Set(tk.map(t=>t.rsSlot));const used=new Set([...tt,...tk].map(t=>t.rsSlot).filter(k=>k!==undefined));let type=tt.some(t=>t.loaded||t.wait>0||t.held||t.s<TT_STOPS[3].s+3)?'tt':tk.length?'truck':rs.units.some(u=>u.holding||u.phase==='pick')?'truck':'tt';
+ const reserve=(t,kind)=>{if(kind==='tt'&&kind!==type)return false;if(kind==='tt'&&tt.some(v=>v.rsSlot!==undefined&&v.s<TT_STOPS[3].s-2))return false;const k=rs.units.findIndex((u,k)=>kind==='truck'?(!truckSlots.has(k)&&!tt.some(v=>v.rsSlot===k&&v.s<TT_STOPS[3].s+3)&&u.holding&&u.phase==='idle'):(!used.has(k)&&u.phase==='idle'&&!u.holding));if(k<0)return false;t.pendingSlot=k;return true;};
+ const enter=(t,kind)=>{t.rsSlot=t.pendingSlot;delete t.pendingSlot;t.parallel=true;used.add(t.rsSlot);if(kind==='truck')truckSlots.add(t.rsSlot);t.zoneEnd=kind==='tt'?TT_ZONE.exit:TRUCK_ZONE.exit;t.mergeAt=(kind==='tt'?TT_STOPS[3].s:KM.rs)+.5;};
+ return {tt:{s:TT_ZONE.enter,open:t=>reserve(t,'tt'),entered:t=>enter(t,'tt')},truck:[{s:PARKING_S,open:()=>true},{s:TRUCK_ZONE.enter,open:t=>reserve(t,'truck'),entered:t=>enter(t,'truck')}]};}
 // rin/rout: ramp lengths into and out of the pocket; long ramps keep the apparent speed steady where the offset runs along the lane.
-function pocketPosition(route,s,slot,enter,exit,rin=9,rout=13,lanes=TT_LANES){const L=route.length,q=route.at(mod(s,L));if(slot===undefined)return q;const d=mod(s-enter,L),len=mod(exit-enter,L);if(d>len)return q;
- const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};const offset=v=>lanes[slot?1:0]*smooth(v/rin)*smooth((len-v)/rout);q[0]+=offset(d);const r=route.at(mod(s+.1,L));q[2]=Math.atan2(-(r[1]-q[1]),r[0]+offset(d+.1)-q[0]);return q;}
-function truckPosition(s,slot){return pocketPosition(TRUCK_ROUTE,s,slot,TRUCK_ZONE.enter,TRUCK_ZONE.exit-19,37,26,TRUCK_LANES);} // the east lane closes along the top lane only, never back towards the tractor lanes
+function pocketPosition(route,s,slot,enter,exit,rin=9,rout=13){const L=route.length,q=route.at(mod(s,L));if(slot===undefined)return q;const d=mod(s-enter,L),len=mod(exit-enter,L);if(d>len)return q;
+ const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};const offset=v=>6*(slot?1:-1)*smooth(v/rin)*smooth((len-v)/rout);q[0]+=offset(d);const r=route.at(mod(s+.1,L));q[2]=Math.atan2(-(r[1]-q[1]),r[0]+offset(d+.1)-q[0]);return q;}
+function truckPosition(s,slot){return pocketPosition(TRUCK_ROUTE,s,slot,TRUCK_ZONE.enter,TRUCK_ZONE.exit-19,20,22);}
 // The pocket closes before the quay lane (TT_TOP), so a tractor parked under crane 2 sits exactly under the drop point.
-// Bypass: an empty tractor leaving the stackers for crane 1 or 0 while another one works (or is heading for) crane 2
-// turns west early, at z = 54.5, passes under crane 2's tractor and merges back at x = 7.8, clear of crane 1's stop.
-const BYPASS=(()=>{const sR=TT_STOPS[3].s,xm=21.6,xe=7.8,zL=54.5,zQ=59.1,sE=TT_TOP+37-xe,zR=TT_ROUTE.at(sR)[1],Lm=sE-sR;
- const paths=[-6,6,0].map(dx=>{const x0=40+dx,pts=[];// A wide 9.5 m turn straight out of the pocket keeps the trailer clear of a truck standing in the next lane.
-  const R=9.5;for(let z=zR;z<zL-R;z+=.5)pts.push([x0,z]);for(let i=0;i<=16;i++){const a=i/16*Math.PI/2;pts.push([x0-R+R*Math.cos(a),zL-R+R*Math.sin(a)]);}
-  for(let x=x0-R-.5;x>xm;x-=.5)pts.push([x,zL]);for(let i=0;i<=40;i++){const f=i/40,g=f*f*(3-2*f);pts.push([xm+(xe-xm)*f,zL+(zQ-zL)*g]);}const p=smoothPath(pts);return {p,k:p.len/Lm};});
- return {sR,sE,sM:TT_TOP+37-xm,Lm,at:(s,b)=>{const P=paths[b-1];return P.p.at(mod(s-sR,TT_ROUTE.length)*P.k);},on:s=>{const d=mod(s-sR,TT_ROUTE.length);return d>=0&&d<=Lm;}};})();
+// Quay bypass lane (z = 54.5, 4.6 m inside the quay lane). An empty tractor leaving the stackers for crane 1 or 0, while
+// a crane further up the quay is taken, turns west straight out of its pocket (9.5 m turn), runs along the bypass
+// lane past the tractors standing at the cranes, and stops at its own crane in that lane: the crane sets the box down
+// there. Along the quay the lane shares the main lane's x at every s, so stops line up with the cranes; at the west
+// end it turns down into the west lane and rejoins the loop at z = 45.
+const BYPASS=(()=>{const L=TT_ROUTE.length,sR=TT_STOPS[3].s,zL=54.5,xQ=18,sQ=TT_TOP+37-xQ,zR=TT_ROUTE.at(sR)[1],zJ=45,sJ=1.5*Math.PI+(56.1-zJ),R=9.5,r=3;
+ // Exact arcs and lines (heading = atan2(-dz, dx), as on the routes), so the turns are smooth and a tractor at a crane
+ // stop sits square to the quay.
+ const a0=Math.asin(Math.max(0,Math.min(1,(zR-(zL-R))/R))),arcE=R*(Math.PI/2-a0);
+ const entryAt=(x0,d)=>{if(d<=arcE){const a=a0+d/R;return [x0-R+R*Math.cos(a),zL-R+R*Math.sin(a),Math.atan2(-Math.cos(a),-Math.sin(a))];}return [x0-R-(d-arcE),zL,Math.PI];};
+ const lenE=x0=>arcE+(x0-R-xQ),arcX=r*Math.PI/2,lenX=arcX+(zL-r-zJ),kX=lenX/sJ;
+ const exitAt=d=>{if(d<=arcX){const a=d/r;return [-27-r*Math.sin(a),zL-r+r*Math.cos(a),Math.atan2(Math.sin(a),-Math.cos(a))];}return [-30,zL-r-(d-arcX),Math.PI/2];};
+ const X0=[34,46,40],dQ=sQ-sR,dL=mod(L-sR,L),Lm=dL+sJ;
+ return {sR,sQ,sJ,zL,on:s=>mod(s-sR,L)<=Lm,quay:s=>{const d=mod(s-sR,L);return d>=dQ&&d<=dL;},
+  at(s,b){const d=mod(s-sR,L);if(d<=dQ){const x0=X0[b-1];return entryAt(x0,d*lenE(x0)/dQ);}if(d<=dL){const q=TT_ROUTE.at(mod(s,L));return [q[0],zL,q[2]];}return exitAt((d-dL)*kX);}};})();
 function tractorPosition(s,slot,bypass){if(bypass&&BYPASS.on(s))return BYPASS.at(s,bypass);return pocketPosition(TT_ROUTE,s,slot,TT_ZONE.enter+10,TT_TOP-1.5,14,13);}
 // Point on the vessel route; beyond either end it continues straight (used for the tugs).
 function routePoint(d){const L=ROUTE.length;if(d>=0&&d<=L)return ROUTE.at(d);const e=ROUTE.at(d<0?0:L),k=d<0?d:d-L;return [e[0]+Math.cos(e[2])*k,e[1]-Math.sin(e[2])*k,e[2]];}
@@ -55600,7 +55609,7 @@ function tugPosition(progress,index){const dep=1+CYCLE.dwell/CYCLE.run;
  if(t<T.turn)return [E[0],E[1],turn(E[2],E[2]+Math.PI,t/T.turn),false];t-=T.turn;
  if(t<T.back){const q=P.at(P.len*(1-ease(t/T.back)));return [q[0],q[1],q[2]+Math.PI,false];}t-=T.back;
  return [A[0],A[1],turn(A[2]+Math.PI,hA,t/T.fast),t>T.fast*.5];}
-const api={TUG_T,RS_PACE,BYPASS,TT_LANES,TRUCK_LANES,tugPosition,dredgerPosition,PARKING_S,TRUCK_ROUTE_LENGTH:TRUCK_ROUTE.length,THR,CYCLE,TT,TT_STOPS,TRUCK_STOPS,CRANE_SEQ,CRANES,RS,TRUCK,TT_ZONE,TRUCK_ZONE,initialTrucks,initialReach,advanceTrucks,advanceReach,truckPosition,ROUTE_LENGTH:ROUTE.length,routePoint,evaluate,advance,vesselPosition,initialTractors,advanceTractors,tractorPosition};root.PotiOps=api;if(typeof module!=='undefined')module.exports=api;
+const api={TUG_T,RS_PACE,BYPASS,tugPosition,dredgerPosition,PARKING_S,TRUCK_ROUTE_LENGTH:TRUCK_ROUTE.length,THR,CYCLE,TT,TT_STOPS,TRUCK_STOPS,CRANE_SEQ,CRANES,RS,TRUCK,TT_ZONE,TRUCK_ZONE,initialTrucks,initialReach,advanceTrucks,advanceReach,truckPosition,ROUTE_LENGTH:ROUTE.length,routePoint,evaluate,advance,vesselPosition,initialTractors,advanceTractors,tractorPosition};root.PotiOps=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
 
 </script><script>
@@ -55734,7 +55743,7 @@ const handling=[0,1,2].map(()=>({key:null,start:null}));const _v=new T.Vector3()
 const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2,lerp=(a,b,f)=>a+(b-a)*f,lerpPose=(a,b,f)=>({psi:lerp(a.psi,b.psi,f),a:lerp(a.a,b.a,f),drop:lerp(a.drop,b.drop,f)});
 const seg=(e,t0,t1)=>ease(Math.min(1,Math.max(0,(e-t0)/(t1-t0))));
 function craneStep(ci,e){const c=model.cranes[ci],seq=PotiOps.CRANE_SEQ,p=handling[ci].source,drop=PotiOps.CRANES[ci].drop;if(!p){c.carry.visible=false;return;}p.getWorldPosition(_v);
- const shipLow={x:_v.x,z:_v.z,y:_v.y+1.65},ttLow={x:drop,z:59.1,y:4.65},height=26;
+ const shipLow={x:_v.x,z:_v.z,y:_v.y+1.65},ttLow={x:drop,z:handling[ci].laneZ||59.1,y:4.65},height=26;
  const at=(a,b,f)=>({x:lerp(a.x,b.x,f),z:lerp(a.z,b.z,f),y:lerp(a.y,b.y,f)});
  const shipHigh={...shipLow,y:height},ttHigh={...ttLow,y:height},clear={x:drop,z:76.1,y:height};
  const frames=[[0,handling[ci].startPoint],[3.5,shipHigh],[6,shipLow],[6.5,shipLow],[8.5,shipHigh],[11,clear],[13.5,ttHigh],[16,ttLow],[16.5,ttLow],[18.5,ttHigh]];
@@ -55744,16 +55753,16 @@ function craneStep(ci,e){const c=model.cranes[ci],seq=PotiOps.CRANE_SEQ,p=handli
  c.carry.visible=e>=seq.grab&&e<seq.release;p.visible=e<seq.grab;}
 function placeVehicle(pos,s,o,parts){const q=pos(s),k=pos(s-o.kingpin),r=pos(s-o.axle);parts.head.position.set(q[0],0,q[1]);parts.head.rotation.y=q[2];parts.trailer.position.set(k[0],0,k[1]);parts.trailer.rotation.y=Math.atan2(-(k[1]-r[1]),k[0]-r[0]);}
 // Both stackers: extend and lower over the transfer lane to pick or place, retract while holding or idle.
-function updateReach(){const R={...PotiOps.RS,pick:5.5,grab:2.5,place:6.5,release:3.1},rs=motion.reach&&motion.reach.units?motion.reach:PotiOps.initialReach();
- rs.units.forEach((u,k)=>{const api=model.stackers[k].userData.rs,t=u.t*PotiOps.RS_PACE,U=PotiOps.RS.units[k],inn=U.inn,out=u.phase==='place'?U.place:U.pick,hd=U.hold;let dy=u.holding?hd:6.1,h=inn,carry=u.holding;
+function updateReach(){const R={...PotiOps.RS,pick:5.5,grab:2.5,place:6.5,release:3.1},rs=motion.reach&&motion.reach.units?motion.reach:PotiOps.initialReach(),out=R.reachOut,inn=R.reachIn;
+ rs.units.forEach((u,k)=>{const api=model.stackers[k].userData.rs,t=u.t*PotiOps.RS_PACE;let dy=u.holding?4:6.1,h=inn,carry=u.holding;
   const smooth=(a,b,v)=>{const f=seg(v,a,b);return f*f*(3-2*f);};
   if(u.phase==='pick'){
    h=lerp(inn,out,smooth(0,.8,t));dy=lerp(6.1,1.05,smooth(.8,2.2,t));
-   if(t>=R.grab){dy=lerp(1.05,hd,smooth(R.grab+.3,4.2,t));h=lerp(out,inn,smooth(4.2,R.pick,t));}
+   if(t>=R.grab){dy=lerp(1.05,4,smooth(R.grab+.3,4.2,t));h=lerp(out,inn,smooth(4.2,R.pick,t));}
    carry=t>=R.grab;
   }
   if(u.phase==='place'){
-   h=lerp(inn,out,smooth(0,.9,t));dy=lerp(hd,1.3,smooth(.9,R.release-.3,t));
+   h=lerp(inn,out,smooth(0,.9,t));dy=lerp(4,1.3,smooth(.9,R.release-.3,t));
    if(t>=R.release){dy=lerp(1.3,6.1,smooth(R.release+.3,5.2,t));h=lerp(out,inn,smooth(5.2,R.place,t));}
    carry=t<R.release;
   }
@@ -55786,7 +55795,8 @@ function updateYard(){for(const [id,p] of Object.entries(model.cargo))p.visible=
   if(rs.units.some(u=>u.phase==='pick'&&u.vehicle===i&&u.t>=R.grab))show=false;
   L.load.visible=show;const le=tt.stop==='locks'?7-tt.wait*1.656:0;(L.trailer.userData.twistlocks||[]).forEach((lock,k)=>lock.visible=show&&!tt.unlocked&&le<(k<2?5.4:2));if(tt.cargo&&model.cargo[tt.cargo])L.load.material=model.cargo[tt.cargo].material;});
  (motion.craneCycles||[]).forEach((c,ci)=>{if(c.cargo)active[ci]={e:c.e,key:ci+':'+c.serial,cargo:c.cargo};});
- active.forEach((a,ci)=>{const c=model.cranes[ci],h=handling[ci];if(!a){c.carry.visible=false;return;}if(h.key!==a.key){h.key=a.key;h.start={...c.pose};c.group.updateMatrixWorld(true);const start=c.carry.parent.getWorldPosition(new T.Vector3());h.startPoint={x:start.x,y:start.y,z:start.z};h.source=model.cargo[a.cargo];if(h.source)c.carry.material=h.source.material;}craneStep(ci,a.e);});
+ active.forEach((a,ci)=>{const c=model.cranes[ci],h=handling[ci];if(!a){c.carry.visible=false;return;}if(h.key!==a.key){h.key=a.key;h.start={...c.pose};c.group.updateMatrixWorld(true);const start=c.carry.parent.getWorldPosition(new T.Vector3());h.startPoint={x:start.x,y:start.y,z:start.z};h.source=model.cargo[a.cargo];if(h.source)c.carry.material=h.source.material;}{// Box goes to the lane of the tractor booked for this crane (bypass lane or quay lane), eased if that changes.
+  const bk=motion.tractors.find(t=>t.held&&t.stop==='crane'+ci)||motion.tractors.find(t=>t.crane===ci&&!t.loaded&&t.bayReserved),zt=bk&&bk.bypass?PotiOps.BYPASS.zL:59.1,hh=handling[ci];hh.laneZ=hh.laneZ===undefined?zt:hh.laneZ+(zt-hh.laneZ)*Math.min(1,lastDt*1.5);}craneStep(ci,a.e);});
  if(model.cranes[3])model.cranes[3].update(motion.craneClock);updateSupervisor(motion.time);
  (motion.trucks||[]).forEach((tk,i)=>{const L=model.trucks[i];placeVehicle(s=>PotiOps.truckPosition(s,tk.rsSlot),tk.s,PotiOps.TRUCK,{head:L.truck,trailer:L.trailer});
   if(tk.cargo&&model.cargo[tk.cargo])L.load.material=model.cargo[tk.cargo].material;L.load.visible=tk.loaded||rs.units.some(u=>u.phase==='place'&&u.vehicle===i&&u.t>=R.release);});}
