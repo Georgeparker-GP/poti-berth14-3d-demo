@@ -55074,10 +55074,10 @@ function miniPitch(root,cx,cz){const g=new T.Group();g.name='Mini football pitch
     k.p.position.y=speed>.6?Math.abs(Math.sin(t*(7+speed*1.5)+k.home[1]))*.06:0;}}};
  return {group:g,update};}
 // Lateral buoys marking the approach channel (IALA A, as in Georgia): red can buoys on the port hand coming in (east),
-// green cone buoys on the starboard hand (west), in pairs either side of the fairway at x = -22 (the west ones a little closer in, off the breakwater head), clear of the ships and
+// green cone buoys on the starboard hand (west), in pairs 22 m either side of the fairway (x = -5, the middle of the entrance; the tugs swing out up to 17 m on the turns), clear of the ships and
 // their tugs. Each has a lantern that flashes at night (Fl R / Fl G, 3 s) and rides the swell.
 function channelBuoys(root){const list=[];
- for(const [x,z,port,phase] of [[-2,-170,true,0],[-35,-170,false,1.5],[-2,-230,true,.75],[-38,-230,false,2.25]]){
+ for(const [x,z,port,phase] of [[17,-180,true,0],[-27,-180,false,1.5],[17,-212,true,.75],[-27,-212,false,2.25]]){
   const c=port?'#c7302a':'#1f8f47',g=new T.Group();g.name=port?'Port-hand buoy':'Starboard-hand buoy';g.position.set(x,0,z);root.add(g);
   cylinder(g,0,-.1,0,1.45,1.5,c);cylinder(g,0,.72,0,1.5,.14,'#2b2f31');cylinder(g,0,.35,0,1.47,.35,'#f1f1ec');
   for(let k=0;k<3;k++){const a=k/3*Math.PI*2;beam(g,[Math.cos(a)*1.05,.8,Math.sin(a)*1.05],[Math.cos(a)*.32,4.3,Math.sin(a)*.32],.07,c);}
@@ -55474,10 +55474,15 @@ function makePath(draw){const segs=[],slide=(ax,az,bx,bz,hd)=>segs.push({len:Mat
  arc=(cx,cz,r,a0,a1)=>segs.push({len:Math.abs(a1-a0)*r,at:f=>{const a=a0+(a1-a0)*f,d=Math.sign(a1-a0);return [cx+r*Math.cos(a),cz+r*Math.sin(a),Math.atan2(-Math.cos(a)*d,-Math.sin(a)*d)];}});
  draw(line,arc,slide);const length=segs.reduce((n,s)=>n+s.len,0);
  return {segs,length,at(d){for(const s of segs){if(d<=s.len)return s.at(d/s.len);d-=s.len;}return segs[segs.length-1].at(1);}};}
-const ROUTE=makePath((line,arc,slide)=>{const h=Math.PI/2,P=Math.PI;line(-22,-330,-22,-80);arc(-7,-80,15,P,h);arc(-7,-50,15,-h,h);line(-7,-35,-28,-35);slide(-28,-35,-28,-3,P);});
+// Fairway: down the middle of the entrance (x = FAIRWAY, halfway between the two breakwater heads), then an easy S
+// inside the harbour to the turning circle off Berth 12.
+const FAIRWAY=-5;
+const ROUTE=makePath((line,arc,slide)=>{const h=Math.PI/2,P=Math.PI;line(FAIRWAY,-330,FAIRWAY,-135);
+ {let prev=[FAIRWAY,-135];for(let i=1;i<=60;i++){const t=i/60,f=t*t*(3-2*t),p=[FAIRWAY+(-22-FAIRWAY)*f,-135+55*t];line(...prev,...p);prev=p;}}
+ arc(-7,-80,15,P,h);arc(-7,-50,15,-h,h);line(-7,-35,-28,-35);slide(-28,-35,-28,-3,P);});
 const OUTBOUND=makePath((line,arc,slide)=>{const h=Math.PI/2,P=Math.PI;slide(-28,-3,-28,-35,P);arc(-28,-55,20,h,P);
- let prev=[-48,-55];for(let i=1;i<=80;i++){const t=i/80,f=t*t*(3-2*t),p=[-48+26*f,-55-88*t];line(...prev,...p);prev=p;}line(-22,-143,-22,-270);
- prev=[-22,-270];for(let i=1;i<=80;i++){const t=i/80,f=t*t*(3-2*t),p=[-22-52*f,-270-80*t];line(...prev,...p);prev=p;}line(-74,-350,-74,-370);arc(-48,-370,26,P,2*P);line(-22,-370,-22,-330);});
+ let prev=[-48,-55];for(let i=1;i<=80;i++){const t=i/80,f=t*t*(3-2*t),p=[-48+(FAIRWAY+48)*f,-55-88*t];line(...prev,...p);prev=p;}line(FAIRWAY,-143,FAIRWAY,-255);
+ prev=[FAIRWAY,-255];for(let i=1;i<=100;i++){const t=i/100,f=t*t*(3-2*t),p=[FAIRWAY+(-74-FAIRWAY)*f,-255-95*t];line(...prev,...p);prev=p;}line(-74,-350,-74,-370);arc((FAIRWAY-74)/2,-370,(FAIRWAY+74)/2,P,2*P);line(FAIRWAY,-370,FAIRWAY,-330);});
 // Exclusive marine cycles keep BULK and its tugs outside while the dredger uses the channel.
 const DREDGE_ROUTE=makePath((line,arc,slide)=>{
  slide(63,-3.5,63,-26,Math.PI);
