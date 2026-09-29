@@ -54265,7 +54265,7 @@ const textureCache=new Map();function containerMat(color,brand){const key=color+
  const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const material=new T.MeshStandardMaterial({map:tex,roughness:.88});material.userData.container=true;textureCache.set(key,material);return material;}
 const colors=['#18775d','#a95029','#254e73','#9b3934','#bc4779','#9b8a64'];
 const MAERSK=[['#e8ecef','MAERSK'],['#47a8d8','MAERSK'],['#e8ecef','MAERSK'],['#c0392f','HAMBURG SÜD'],['#dcae2e','MAERSK'],['#3d93c4','MAERSK']];
-function container(g,x,y,z,idx,brand,turn){let col=colors[idx%colors.length],text=brand||['EVERGREEN','Hapag-Lloyd','PORT','ONE'][idx%4];if(brand==='MAERSK')[col,text]=MAERSK[idx%MAERSK.length];const m=box(g,x,y,z,10,2.8,2.65,containerMat(col,text));if(turn)m.rotation.y=Math.PI/2;return m;}
+function container(g,x,y,z,idx,brand,turn){let col=colors[idx%colors.length],text=brand||['EVERGREEN','Hapag-Lloyd','PORT','ONE'][idx%4];if(text==='EVERGREEN')col=['#1d6b43','#237a4c','#195e3b'][idx%3];if(brand==='MAERSK')[col,text]=MAERSK[idx%MAERSK.length];const m=box(g,x,y,z,10,2.8,2.65,containerMat(col,text));if(turn)m.rotation.y=Math.PI/2;return m;}
 // Oriented slab: a rectangular member from point a to point b (width w, depth d).
 function slab(g,a,b,w,d,c){const A=new T.Vector3(...a),B=new T.Vector3(...b),m=mesh(g,cube,typeof c==='string'?mat(c):c);m.position.copy(A).add(B).multiplyScalar(.5);m.scale.set(w,A.distanceTo(B),d);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),B.sub(A).normalize());return m;}
 // Flush painted lettering, fixed to each accommodation face.
@@ -55025,6 +55025,70 @@ function berthSupervisor(){const g=new T.Group();g.userData.kind='supervisor';
  box(arm,0,-.35,0,.28,.9,.28,navy);box(arm,.05,-.78,.05,.16,.4,.2,'#1d2226');beam(arm,[.05,-.95,.05],[.05,-1.35,.05],.02,'#1d2226');
  g.userData.arm=arm;return g;}
 // Town quarter north-east of the terminal: block grid, streets, low-rise housing and a small park.
+// Five-a-side pitch in the city block by the port road: artificial turf, lines, goals with nets, a low fence and ten
+// children (red and blue shirts, a keeper each) playing; the ball wanders round the pitch and the players chase it.
+function miniPitch(root,cx,cz){const g=new T.Group();g.name='Mini football pitch';g.position.set(cx,0,cz);root.add(g);
+ const L=24,W=14,white='#f2f4ef',line=(x,z,w,d)=>{const m=box(g,x,.135,z,w,.02,d,white);m.castShadow=false;};
+ box(g,0,.05,0,L+3,.1,W+3,'#6f756f');
+ for(let k=0;k<8;k++)box(g,-L/2+L/16+k*L/8,.1,0,L/8,.06,W,k%2?'#3d8a45':'#44954c');
+ line(0,-W/2,L,.12);line(0,W/2,L,.12);line(-L/2,0,.12,W);line(L/2,0,.12,W);line(0,0,.12,W);
+ {const r=mesh(g,new T.RingGeometry(2.1,2.24,40),mat(white),0,.14,0);r.rotation.x=-Math.PI/2;r.castShadow=false;}
+ for(const sd of [-1,1]){line(sd*(L/2-2.5),0,.12,7);line(sd*(L/2-1.25),-3.5,2.5,.12);line(sd*(L/2-1.25),3.5,2.5,.12);
+  mesh(g,new T.CircleGeometry(.14,12),mat(white),sd*(L/2-4),.14,0).rotation.x=-Math.PI/2;
+  // Goal: posts, bar and a sagging net behind.
+  const gx=sd*(L/2+.05),net=new T.MeshStandardMaterial({color:'#e8ece8',transparent:true,opacity:.35,side:T.DoubleSide,depthWrite:false});
+  for(const z of [-2.5,2.5])beam(g,[gx,0,z],[gx,2.1,z],.07,white);beam(g,[gx,2.1,-2.5],[gx,2.1,2.5],.07,white);
+  for(const z of [-2.5,2.5])beam(g,[gx,2.1,z],[gx+sd*1.2,0,z],.04,white);
+  const back=mesh(g,new T.PlaneGeometry(5,2.4),net,gx+sd*.6,1.05,0);back.rotation.y=Math.PI/2;back.rotation.z=sd*.5;back.castShadow=false;
+  for(const z of [-2.5,2.5]){const sideNet=mesh(g,new T.PlaneGeometry(1.2,2.1),net,gx+sd*.6,.7,z);sideNet.castShadow=false;}
+  // Tall ball-stop net behind each goal.
+  const stop=new T.MeshStandardMaterial({color:'#2d3a36',transparent:true,opacity:.28,side:T.DoubleSide,depthWrite:false});
+  const bs=mesh(g,new T.PlaneGeometry(W+3,4),stop,sd*(L/2+1.5),2,0);bs.rotation.y=Math.PI/2;bs.castShadow=false;
+  for(const z of [-(W/2+1.5),-3,3,W/2+1.5])beam(g,[sd*(L/2+1.5),0,z],[sd*(L/2+1.5),4.1,z],.06,'#3f5a52');}
+ // Low fence along the sides, open in the middle of the south side (towards the street).
+ for(const sd of [-1,1]){const z=sd*(W/2+1.5);for(let x=-L/2-1.5;x<=L/2+1.5+1e-6;x+=1.5){if(sd>0&&Math.abs(x)<1.5)continue;beam(g,[x,0,z],[x,1.2,z],.05,'#3f5a52');}
+  for(const [a,b] of sd>0?[[-L/2-1.5,-1.5],[1.5,L/2+1.5]]:[[-L/2-1.5,L/2+1.5]])for(const y of [.6,1.15])beam(g,[a,y,z],[b,y,z],.035,'#3f5a52');}
+ // Players: a keeper and four outfield players per side.
+ const kids=[],ball=mesh(g,new T.SphereGeometry(.3,12,9),mat('#f7f7f2',0,.5),0,.3,0);
+ const team=(shirt,shorts,sd)=>[[sd*-10.6,0,true],[sd*-6,-3.5],[sd*-6,3.5],[sd*-2,-1.5],[sd*2.5,2]].forEach(([hx,hz,keeper],k)=>{
+  const p=pedestrian(shirt,shorts,['#3a2a1e','#1e1a17','#6b4a2a','#2b2b2b','#8a5a2b'][(k+(sd>0?2:0))%5]);p.scale.setScalar(.6);if(p.userData.parts.umbrella)p.userData.parts.umbrella.visible=false;
+  p.position.set(hx,0,hz);g.add(p);kids.push({p,home:[hx,hz],keeper:!!keeper,sd,v:[0,0],face:sd>0?Math.PI:0});});
+ team('#d8322c','#f2f2f2',1);team('#2e62c9','#1c2a44',-1);
+ let last=null,phase=0;
+ const update=t=>{const dt=last===null?0:Math.min(.1,Math.max(0,t-last));last=t;
+  const bx=9.5*Math.sin(.21*t+.6*Math.sin(.13*t)),bz=5*Math.sin(.37*t+1.3)*Math.cos(.11*t);ball.position.set(bx,.3+Math.abs(Math.sin(1.9*t))*.25*Math.max(0,Math.sin(.5*t)),bz);ball.rotation.z-=dt*3;ball.rotation.x+=dt*2;
+  for(const sd of [-1,1]){const field=kids.filter(k=>k.sd===sd&&!k.keeper);let near=field[0],dmin=1e9;for(const k of field){const d=Math.hypot(k.p.position.x-bx,k.p.position.z-bz);if(d<dmin){dmin=d;near=k;}}
+   for(const k of kids.filter(k=>k.sd===sd)){let tx,tz,vmax=3;
+    if(k.keeper){tx=k.home[0];tz=Math.max(-2.2,Math.min(2.2,bz*.6));vmax=2.2;}
+    else if(k===near){const a=Math.atan2(bz-k.p.position.z,bx-k.p.position.x);tx=bx-Math.cos(a)*.7;tz=bz-Math.sin(a)*.7;vmax=4.2;}
+    else{tx=k.home[0]+(bx-k.home[0])*.4;tz=k.home[1]+(bz-k.home[1])*.35;}
+    // Keep a little room between players.
+    for(const o of kids)if(o!==k){const dx=k.p.position.x-o.p.position.x,dz=k.p.position.z-o.p.position.z,d=Math.hypot(dx,dz);if(d<1.3&&d>1e-3){tx+=dx/d*(1.3-d)*2;tz+=dz/d*(1.3-d)*2;}}
+    let dx=tx-k.p.position.x,dz=tz-k.p.position.z;const d=Math.hypot(dx,dz),sp=Math.min(vmax,d*1.6);
+    const ax=d>1e-3?dx/d*sp:0,az=d>1e-3?dz/d*sp:0,f=Math.min(1,dt*4);k.v[0]+=(ax-k.v[0])*f;k.v[1]+=(az-k.v[1])*f;
+    k.p.position.x=Math.max(-L/2+.4,Math.min(L/2-.4,k.p.position.x+k.v[0]*dt));k.p.position.z=Math.max(-W/2+.4,Math.min(W/2-.4,k.p.position.z+k.v[1]*dt));
+    const speed=Math.hypot(k.v[0],k.v[1]);
+    // Face where they run; standing players turn to the ball.
+    const want=speed>.4?Math.atan2(-k.v[1],k.v[0]):Math.atan2(-(bz-k.p.position.z),bx-k.p.position.x);let da=want-k.face;da=Math.atan2(Math.sin(da),Math.cos(da));k.face+=da*Math.min(1,dt*6);k.p.rotation.y=k.face;
+    const pr=k.p.userData.parts,sw=Math.sin(t*(7+speed*1.5)+k.home[1])*Math.min(.8,speed*.28);pr.legs.forEach((l,i)=>l.rotation.z=i?sw:-sw);pr.arms.forEach((a,i)=>a.rotation.z=i?-sw*.8:sw*.8);
+    k.p.position.y=speed>.6?Math.abs(Math.sin(t*(7+speed*1.5)+k.home[1]))*.06:0;}}};
+ return {group:g,update};}
+// Lateral buoys marking the approach channel (IALA A, as in Georgia): red can buoys on the port hand coming in (east),
+// green cone buoys on the starboard hand (west), in pairs either side of the fairway at x = -22 (the west ones a little closer in, off the breakwater head), clear of the ships and
+// their tugs. Each has a lantern that flashes at night (Fl R / Fl G, 3 s) and rides the swell.
+function channelBuoys(root){const list=[];
+ for(const [x,z,port,phase] of [[-2,-170,true,0],[-35,-170,false,1.5],[-2,-230,true,.75],[-38,-230,false,2.25]]){
+  const c=port?'#c7302a':'#1f8f47',g=new T.Group();g.name=port?'Port-hand buoy':'Starboard-hand buoy';g.position.set(x,0,z);root.add(g);
+  cylinder(g,0,-.1,0,1.45,1.5,c);cylinder(g,0,.72,0,1.5,.14,'#2b2f31');cylinder(g,0,.35,0,1.47,.35,'#f1f1ec');
+  for(let k=0;k<3;k++){const a=k/3*Math.PI*2;beam(g,[Math.cos(a)*1.05,.8,Math.sin(a)*1.05],[Math.cos(a)*.32,4.3,Math.sin(a)*.32],.07,c);}
+  box(g,0,2.4,0,1.2,.9,.06,c);box(g,0,2.4,0,.06,.9,1.2,c);
+  cylinder(g,0,4.35,0,.45,.12,'#2b2f31');
+  if(port)cylinder(g,0,5.35,0,.5,1,c);else{const cone=mesh(g,new T.ConeGeometry(.62,1.1,16),mat(c),0,5.4,0);}
+  const lamp=new T.MeshStandardMaterial({color:port?'#ff6a5c':'#6cff8f',emissive:port?'#ff2a1a':'#20ff5a',emissiveIntensity:.2,roughness:.3});
+  mesh(g,new T.CylinderGeometry(.18,.18,.36,12),lamp,0,4.65,0);
+  const glow=new T.Sprite(new T.SpriteMaterial({map:poolTex,color:port?'#ff4a3a':'#3dff75',transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false}));glow.position.set(0,4.7,0);glow.scale.setScalar(9);glow.visible=false;g.add(glow);
+  list.push({group:g,lamp,glow,phase,x,z});}
+ return list;}
 function urbanZone(root){const g=new T.Group();g.userData.kind='urban';root.add(g);
  const ground='#8a9182',asph='#4b5254',walls=['#e6e0d2','#dcd3c2','#cfd6d6','#e2cdb6','#d9dcd8'],roofs=['#b0503c','#a8452f','#6d5c51','#8a6a4f'];
  box(g,180,-1.6,164,180,3.2,102,ground);
@@ -55040,6 +55104,8 @@ function urbanZone(root){const g=new T.Group();g.userData.kind='urban';root.add(
  const blocks=[[96,126],[124,126],[162,126],[200,126],[240,126],[96,157],[124,157],[162,157],[240,157],[96,188],[124,188],[162,188],[200,188],[240,188]];
  for(const [bx,bz] of blocks){for(let i=0;i<3;i++){const w=7+rnd()*7,d=7+rnd()*6,h=6+rnd()*rnd()*24,
    x=bx+rnd()*14,z=bz+rnd()*20,wall=walls[Math.floor(rnd()*walls.length)];
+  // This small house made way for the neighbourhood football pitch (miniPitch).
+  if(bx===124&&bz===188&&i===2){if(h<14)rnd();continue;}
   box(g,x,h/2,z,w,h,d,wall);
   if(h<14){const r=mesh(g,new T.ConeGeometry(Math.max(w,d)*.72,2.6,4),mat(roofs[Math.floor(rnd()*roofs.length)]),x,h+1.3,z);r.rotation.y=Math.PI/4;}
   else box(g,x,h+.35,z,w+.8,.7,d+.8,'#9aa0a0');
@@ -55171,7 +55237,11 @@ function barrierLines(root){
  for(let k=0;k<6;k++)concreteBarrier(root,42.5+k*3.24,9.3,0); // ends just short of the kiosk at x = 59.8
  // Short return at the west end, down to the quay edge.
  for(const z of [7.1,4.8])concreteBarrier(root,41.6,z,Math.PI/2);
- for(let k=0;k<5;k++)concreteBarrier(root,69,35.3+k*2.5,Math.PI/2);
+ // East stacker: a U round its tail, centred on the machine (z = 38): the row behind it and a short arm on each side.
+ for(let k=0;k<5;k++)concreteBarrier(root,69,33+k*2.5,Math.PI/2);
+ for(const z of [31.3,44.7])for(const x of [67.6,65.4,63.2])concreteBarrier(root,x,z,0);
+ // West stacker: a row across its tail, 1.5 m clear of the counterweight, centred on the machine.
+ for(const dz of [-3.45,-1.15,1.15,3.45])concreteBarrier(root,11.6,38+dz,Math.PI/2);
  for(let k=0;k<3;k++)concreteBarrier(root,111.2,33.85+k*2.9,Math.PI/2);
 }
 // Yard office in place of the east container stack: glazed on all four sides, one door facing the terminal building
@@ -55308,12 +55378,12 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const gottwald=mobileCrane(-15,2.2,{z:8,rot:0,base:'#1668b3',cab:'#8f989b',tower:'#9aa3a6',boom:'#7fb9e0',lattice:['#9fd0ea','#6aa8d6','#8cc3e4'],name:'GOTTWALD',tool:'grab'});
  root.add(gottwald.group);cranes.push(gottwald);
  const supervisor=berthSupervisor();root.add(supervisor);
- yardDetails(root);barrierLines(root);roadArrow(root);for(let k=0;k<3;k++)flatWagon(root,132+k*20.3,59);dryDockShoreLights(root);urbanZone(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
+ yardDetails(root);barrierLines(root);roadArrow(root);for(let k=0;k<3;k++)flatWagon(root,132+k*20.3,59);dryDockShoreLights(root);const football=miniPitch(root,131,179),buoys=channelBuoys(root);urbanZone(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
  flatRackStack(root);const twistlocks=twistlockStation(root);
  const tractors=Array.from({length:6},(_,i)=>{const tractor=terminalTractor(i+1),tr=trailer();root.add(tractor);root.add(tr);return {tractor,trailer:tr,load:tr.userData.load};});
  const tugs=[tugBoat(),tugBoat()];tugs.forEach(t=>{t.scale.setScalar(.85);root.add(t);});
  const towMat=mat('#20262a');const towLines=tugs.map(()=>{const m=new T.Mesh(cyl,towMat);root.add(m);return m;});
- const pk=moored.userData.picks;return {root,twistlocks,cargo:moored.userData.cargo,palms:animatedPalms,walkers,supervisor,dredger:dredge,gate:root.userData.gate,moored,moving,tanker:tk.tanker,cranes,tractors,tugs,towLines,picks:[pk[1],pk[4],pk[5]],stackers,trucks,dockCrew,dredgerModel:dredge,khibula};
+ const pk=moored.userData.picks;return {root,twistlocks,cargo:moored.userData.cargo,palms:animatedPalms,walkers,supervisor,dredger:dredge,gate:root.userData.gate,moored,moving,tanker:tk.tanker,cranes,tractors,tugs,towLines,picks:[pk[1],pk[4],pk[5]],stackers,trucks,dockCrew,dredgerModel:dredge,khibula,football,buoys};
 }
 // Merge the static scenery into one mesh per material: cuts several thousand draw calls to a few hundred,
 // which is what lets phones run the animation. Dynamic objects are left untouched.
@@ -55751,7 +55821,7 @@ const scene=new T.Scene();scene.background=new T.Color('#8daab3');scene.fog=new 
 const hemi=new T.HemisphereLight('#d2e8f2','#787c62',2.4);scene.add(hemi);const sun=new T.DirectionalLight('#fff0cf',3);sun.position.set(-70,130,-80);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-155,right:155,top:145,bottom:-145,near:1,far:350});sun.shadow.normalBias=.3;sun.shadow.bias=-.00015;scene.add(sun);
 const model=PotiModels.build();scene.add(model.root);const anemometers=[],shipFlags=[];model.root.traverse(o=>{if(o.userData.anemometer)anemometers.push(o);if(o.userData.flag)shipFlags.push(o);});
 // Phones cannot carry a few thousand draw calls, so the static scenery is merged per material there.
-if(!detailed)try{PotiModels.mergeStatic(model.root,[model.khibula,model.dockCrew.group,model.twistlocks,...model.palms,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.cranes.map(c=>c.group),...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);for(const [obj,keep] of [[model.moored,Object.values(model.cargo)],[model.moving,[]],...model.tugs.map(t=>[t,[]]),...model.trucks.flatMap(t=>[[t.truck,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]]),...model.tractors.flatMap(t=>[[t.tractor,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]])])PotiModels.mergeStatic(obj,keep,obj);
+if(!detailed)try{PotiModels.mergeStatic(model.root,[model.khibula,model.dockCrew.group,model.football.group,...model.buoys.map(b=>b.group),model.twistlocks,...model.palms,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.cranes.map(c=>c.group),...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);for(const [obj,keep] of [[model.moored,Object.values(model.cargo)],[model.moving,[]],...model.tugs.map(t=>[t,[]]),...model.trucks.flatMap(t=>[[t.truck,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]]),...model.tractors.flatMap(t=>[[t.tractor,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]])])PotiModels.mergeStatic(obj,keep,obj);
  for(const c of model.cranes)PotiModels.mergeParts(c.group,[c.carry]);
  for(const u of model.stackers)PotiModels.mergeParts(u,[u.userData.rs.carry]);}catch(e){console.warn('merge skipped',e);}
 const waterMaterial=new T.ShaderMaterial({fog:true,uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,{uTime:{value:0},uWave:{value:.7},uNight:{value:0},uWind:{value:8},uWindDir:{value:new T.Vector2(1,0)}}]),vertexShader:`uniform float uTime;uniform float uWave;uniform float uWind;uniform vec2 uWindDir;varying vec3 vWorld;varying vec3 vNormal;
@@ -55892,7 +55962,9 @@ function updateModel(){for(const f of shipFlags){const p=f.geometry.attributes.p
  model.moored.position.y=Math.sin(t*.5)*sea*.07;model.moored.rotation.x=Math.sin(t*.4)*sea*.006;model.moored.rotation.z=Math.sin(t*.46+1)*sea*.004;
  if(model.dredger){const mooredSea=Math.min(sea,.7);model.dredger.position.y=Math.sin(t*.8+.6)*mooredSea*.2;model.dredger.rotation.z=Math.sin(t*.7)*mooredSea*.03;model.dredger.rotation.x=Math.sin(t*.95)*mooredSea*.022;}
  if(model.khibula){const k=model.khibula;k.position.y=Math.sin(t*.55+.8)*Math.min(sea,1.5)*.12;k.rotation.z=Math.sin(t*.5)*Math.min(sea,1.5)*.012;k.rotation.x=Math.sin(t*.62+1)*Math.min(sea,1.5)*.008;}
- if(model.tanker){model.tanker.position.y=Math.sin(t*.45+2)*sea*.05;model.tanker.rotation.z=Math.sin(t*.5+2)*sea*.004;}updateYard();updateWalkers(motion.time);updateGate(simDt);updateTugs(t);moorings.update();if(model.dockCrew)model.dockCrew.update(t);waterMaterial.uniforms.uTime.value=t;waterMaterial.uniforms.uWave.value=weather.wave||0;}
+ if(model.tanker){model.tanker.position.y=Math.sin(t*.45+2)*sea*.05;model.tanker.rotation.z=Math.sin(t*.5+2)*sea*.004;}updateYard();updateWalkers(motion.time);updateGate(simDt);updateTugs(t);moorings.update();if(model.dockCrew)model.dockCrew.update(t);if(model.football)model.football.update(t);
+ for(const b of model.buoys||[]){const on=((t+b.phase)%3)<1;b.glow.visible=night&&on;b.lamp.emissiveIntensity=on?(night?4:1.2):.15;
+  b.group.position.y=Math.sin(t*1.1+b.x*.3)*.12*(1+Math.min(weather.wave||0,3));b.group.rotation.x=Math.sin(t*.9+b.z)*.04*(1+Math.min(weather.wave||0,3));b.group.rotation.z=Math.sin(t*.7+b.x)*.04*(1+Math.min(weather.wave||0,3));}waterMaterial.uniforms.uTime.value=t;waterMaterial.uniforms.uWave.value=weather.wave||0;}
 
 // Mooring lines: each runs from a fairlead on the ship's side facing the quay to a bollard, with a slight sag, and
 // follows the ship as it rides the swell. Bulk carrier lines are out only while she lies alongside Berth 12.
