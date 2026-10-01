@@ -54584,7 +54584,7 @@ function mergeGeos(list){const pos=[],nor=[];for(const g of list){const n=g.inde
 function tetrapodGeometry(){const up=new T.Vector3(0,1,0);return mergeGeos([[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(d=>{const g=new T.CylinderGeometry(.38,.78,2.3,8);g.translate(0,1.15,0);const q=new T.Quaternion().setFromUnitVectors(up,new T.Vector3(...d).normalize());g.applyQuaternion(q);return g;}));}
 const beaconMat=new T.MeshStandardMaterial({color:'#2f7d4a',emissive:'#34ff7a',emissiveIntensity:0});
 // Rubble-mound breakwater with a concrete crown and tetrapod armour (after the photo), green beacon at the head.
-function breakwater(root,pts,opt={}){const cap=opt.cap!==false,beacon=opt.beacon!==false;
+function breakwater(root,pts,opt={}){const cap=opt.cap!==false,beacon=opt.beacon!==false,clear=opt.clear||[];
  // Smooth the centreline so the segments join without visible corners or stubs.
  if(pts.length>2){const curve=new T.CatmullRomCurve3(pts.map(p=>new T.Vector3(p[0],0,p[1])),false,'catmullrom',.35);
   const n=Math.max(4,Math.round(curve.getLength()/6));pts=curve.getSpacedPoints(n).map(v=>[v.x,v.z]);}const g=new T.Group();g.name='breakwater';g.userData.kind='breakwater';root.add(g);
@@ -54597,6 +54597,8 @@ function breakwater(root,pts,opt={}){const cap=opt.cap!==false,beacon=opt.beacon
    for(const y of layer)items.push([ax+dx*(d+rnd()*.8)-dz*(o+rnd()*.6-.3),y+rnd()*.4,az+dz*(d+rnd()*.8)+dx*(o+rnd()*.6-.3)]);}
   if(cap)for(let d=4;d<len;d+=14)cylinder(g,ax+dx*d,2,az+dz*d,.28,.6,'#5a2f22');}
  const [ex,ez]=pts[pts.length-1];if(beacon)for(let r=4;r<=11;r+=1.9)for(let a=0;a<Math.PI*2;a+=1.9/r)for(const y of r<8?[.9,2.3]:[.1])items.push([ex+Math.cos(a)*r,y+rnd()*.4,ez+Math.sin(a)*r]);
+ // Keep-clear boxes [x0,z0,x1,z1]: no armour units there (e.g. under a moored ship's stern).
+ for(let i=items.length-1;i>=0;i--){const [x,,z]=items[i];if(clear.some(c=>x>c[0]&&x<c[2]&&z>c[1]&&z<c[3]))items.splice(i,1);}
  const inst=new T.InstancedMesh(tetrapodGeometry(),mat('#d9d6cc',0,.85),items.length);inst.castShadow=true;inst.receiveShadow=true;inst.userData.kind='breakwater';
  const m=new T.Matrix4(),q=new T.Quaternion(),e=new T.Euler(),sc=new T.Vector3(1,1,1);
  items.forEach((p,i)=>{e.set(rnd()*6.3,rnd()*6.3,rnd()*6.3);q.setFromEuler(e);const k=.85+rnd()*.3;sc.set(k,k,k);m.compose(new T.Vector3(...p),q,sc);inst.setMatrixAt(i,m);});g.add(inst);
@@ -54751,7 +54753,8 @@ function tankerJetty(root){const g=new T.Group();g.userData.kind='jetty';root.ad
  box(g,105,1.8,-112,6,3.6,3.4,'#e8e6de');box(g,105,3.9,-112,6.4,.3,3.8,'#c0392b');
  // Rubble armour at the head of the mole, narrowing the entrance channel.
  // One continuous rubble bank: along the seaward side of the mole, round its head, up to the channel beacon.
- breakwater(root,[[116,-131],[86,-131],[60,-130],[44,-120],[45,-104]],{cap:false});
+ // The head is drawn back 3.6 m and kept clear of METIN KA's stern (x >= 49, z >= -104.3): open water astern of her.
+ breakwater(root,[[116,-131],[86,-131],[60,-130],[44,-120],[43,-107.5]],{cap:false,clear:[[44,-106.8,160,-80]]});
  const roro=roroDioskuria();root.add(roro);root.userData.roro=roro;
  const t=tanker('METIN KA');t.position.set(102,0,-95.5);root.add(t);return {jetty:g,tanker:t};}
 // Straight road on a landfill spur between two points (deck, asphalt, centre dashes, lamps).
