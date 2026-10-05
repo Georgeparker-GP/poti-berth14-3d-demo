@@ -55867,7 +55867,8 @@ STREET=(()=>{const EYE=3.05,R=.45,WALK=5.5,RUN=11,TURN=1.7,CELL=12,_m=new T.Matr
     bb.getCenter(_c).applyMatrix4(M);if(_c.y>4.5)return;_inv.copy(M).invert();_v.set(x,_c.y,z).applyMatrix4(_inv);
     const s=[0,1,2].map(i=>_c.setFromMatrixColumn(M,i).length()||1);
     if(_v.x>bb.min.x-R/s[0]&&_v.x<bb.max.x+R/s[0]&&_v.y>bb.min.y-R/s[1]&&_v.y<bb.max.y+R/s[1]&&_v.z>bb.min.z-R/s[2]&&_v.z<bb.max.z+R/s[2])hit=true;});if(hit)return true;}return false;};
- const onFloor=(x,z)=>floors.some(o=>inside(o,x,z,-R));
+ // On land when his footprint (centre and four edge points) is on the slabs: adjoining slabs leave no seam, the quay edge stops him.
+ const onFloor=(x,z)=>[[0,0],[R,0],[-R,0],[0,R],[0,-R]].every(([a,b])=>floors.some(o=>inside(o,x+a,z+b,0)));
  function free(x,z,withMovers=true){if(!onFloor(x,z))return false;const list=grid.get(key(Math.floor(x/CELL),Math.floor(z/CELL)))||[];
   for(const o of list){if(o.circle){if(Math.hypot(o.circle.cx-x,o.circle.cz-z)<o.circle.r+R)return false;}else if(inside(o,x,z,R))return false;}
   return !(withMovers&&moverHit(x,z));}
@@ -55878,17 +55879,26 @@ STREET=(()=>{const EYE=3.05,R=.45,WALK=5.5,RUN=11,TURN=1.7,CELL=12,_m=new T.Matr
  // Lamp light pools are drawn for the view from above; seen at eye level they pile up into a white glare, so they are dimmed.
  const poolMats=new Set();model.root.traverse(o=>{const g=o.geometry&&o.geometry.parameters;if(o.isMesh&&g&&g.width===13&&g.height===13&&o.material.blending===T.AdditiveBlending)poolMats.add(o.material);});
  const dimPools=on=>poolMats.forEach(m=>{const base=m.userData.baseOpacity===undefined?m.opacity:m.userData.baseOpacity;m.opacity=base*(night?.855:1)*(on?.3:1);});
- const S={on:false,x:0,z:0,h:0,p:0,keys:new Set(),goal:null,stuck:0,saved:null,free,nearestFree,collect};
- S.apply=()=>{const c=Math.cos(S.p);camera.position.set(S.x,EYE,S.z);camera.lookAt(S.x+Math.sin(S.h)*c,EYE+Math.sin(S.p),S.z+Math.cos(S.h)*c);};
- S.enter=(x,z,heading)=>{const spot=nearestFree(x,z);if(!spot)return false;S.saved={yaw,pitch,distance,target:target.clone(),fov:camera.fov,near:camera.near};[S.x,S.z]=spot;S.h=heading;S.p=-.05;S.on=true;S.goal=null;
+ const S={on:false,x:0,z:0,y:0,h:0,p:0,keys:new Set(),goal:null,stuck:0,saved:null,free,nearestFree,collect};
+ S.apply=()=>{const c=Math.cos(S.p),e=S.y+EYE;camera.position.set(S.x,e,S.z);camera.lookAt(S.x+Math.sin(S.h)*c,e+Math.sin(S.p),S.z+Math.cos(S.h)*c);};
+ S.enter=(x,z,heading)=>{const spot=nearestFree(x,z);if(!spot)return false;S.saved={yaw,pitch,distance,target:target.clone(),fov:camera.fov,near:camera.near};[S.x,S.z]=spot;S.y=0;S.h=heading;S.p=-.05;S.on=true;S.goal=null;
   camera.fov=68;camera.near=.1;camera.updateProjectionMatrix();document.body.classList.add('street-on');labels(false);dimPools(true);ui.update();S.apply();canvas.focus({preventScroll:true});return true;};
  S.exit=()=>{if(!S.on)return;S.on=false;S.keys.clear();S.goal=null;const v=S.saved;camera.fov=v.fov;camera.near=v.near;camera.updateProjectionMatrix();labels(true);dimPools(false);
   // Back to the orbit view, centred on where he was standing.
-  yaw=v.yaw;pitch=Math.max(v.pitch,.5);distance=Math.min(v.distance,160);target.set(S.x,3,S.z);document.body.classList.remove('street-on');ui.update();updateCamera();};
+  yaw=v.yaw;pitch=Math.max(v.pitch,.5);distance=Math.min(v.distance,160);target.set(S.x,3+S.y,S.z);document.body.classList.remove('street-on');ui.update();updateCamera();};
  S.look=(dx,dy)=>{S.h-=dx*.005;S.p=clamp(S.p-dy*.004,-1.1,1.1);S.goal=null;S.apply();};
- const tryMove=(dx,dz)=>{if(!dx&&!dz)return true;const nx=S.x+dx,nz=S.z+dz;if(free(nx,nz)){S.x=nx;S.z=nz;return true;}
-  // Slide along walls.
-  if(free(S.x+dx,S.z)){S.x+=dx;return true;}if(free(S.x,S.z+dz)){S.z+=dz;return true;}return false;};
+ // Raised walkways he can climb: the skywalk over the road (deck at 7 m between its glass railings) and its two flights
+ // of stairs, as [x0,z0,y0, x1,z1,y1, half-width]; the height runs linearly along each piece, so the stairs read as a
+ // steady climb. Off the ground the scenery below no longer stops him, only the railings (the walkway's edges).
+ const WALKWAYS=[[257,81.3,0,257,68.5,7,1.15],[257,68.5,7,257,-1.6,7,1.15],[258.2,-.7,7,255.3,-.7,7,1.2],[255.3,-.7,7,238,-.7,0,1.15]];
+ const walkwayAt=(x,z,near)=>{let best=null;for(const [ax,az,ay,bx,bz,by,hw] of WALKWAYS){const dx=bx-ax,dz=bz-az,L2=dx*dx+dz*dz,t=((x-ax)*dx+(z-az)*dz)/L2;if(t<0||t>1)continue;
+   const off=Math.abs((x-ax)*dz-(z-az)*dx)/Math.sqrt(L2);if(off>hw)continue;const y=ay+(by-ay)*t;if(Math.abs(y-near)<.9&&(best===null||Math.abs(y-near)<Math.abs(best-near)))best=y;}return best;};
+ // New feet height if he can step to (x, z), else null: a walkway at about his height, or open ground when he is on the ground.
+ const stepTo=(x,z)=>{const w=walkwayAt(x,z,S.y);if(w!==null)return w;return S.y<.6&&free(x,z)?0:null;};
+ const tryMove=(dx,dz)=>{if(!dx&&!dz)return true;let y;
+  if((y=stepTo(S.x+dx,S.z+dz))!==null){S.x+=dx;S.z+=dz;S.y=y;return true;}
+  // Slide along walls and railings.
+  if((y=stepTo(S.x+dx,S.z))!==null){S.x+=dx;S.y=y;return true;}if((y=stepTo(S.x,S.z+dz))!==null){S.z+=dz;S.y=y;return true;}return false;};
  S.update=dt=>{const k=S.keys,run=k.has('Shift'),sp=(run?RUN:WALK)*dt;let f=0,s=0,turn=0;
   if(k.has('ArrowUp')||k.has('w')||k.has('W')||k.has('pad-up'))f+=1;if(k.has('ArrowDown')||k.has('s')||k.has('S')||k.has('pad-down'))f-=1;
   if(k.has('a')||k.has('A'))s+=1;if(k.has('d')||k.has('D'))s-=1;if(k.has('ArrowLeft')||k.has('pad-left'))turn+=1;if(k.has('ArrowRight')||k.has('pad-right'))turn-=1;
@@ -55900,7 +55910,7 @@ STREET=(()=>{const EYE=3.05,R=.45,WALK=5.5,RUN=11,TURN=1.7,CELL=12,_m=new T.Matr
   S.apply();};
  // Tap on the ground: walk there (the ray meets the ground plane; walls in between stop him).
  S.tap=e=>{const r=canvas.getBoundingClientRect(),p=new T.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),rc=new T.Raycaster();rc.setFromCamera(p,camera);
-  const d=rc.ray.direction;if(d.y>-.02)return;const t=-(rc.ray.origin.y-.05)/d.y;const gx=rc.ray.origin.x+d.x*t,gz=rc.ray.origin.z+d.z*t;if(Math.hypot(gx-S.x,gz-S.z)>120)return;S.goal=[gx,gz];S.stuck=0;};
+  const d=rc.ray.direction;if(d.y>-.02)return;const t=-(rc.ray.origin.y-S.y-.05)/d.y;const gx=rc.ray.origin.x+d.x*t,gz=rc.ray.origin.z+d.z*t;if(Math.hypot(gx-S.x,gz-S.z)>120)return;S.goal=[gx,gz];S.stuck=0;};
  // ---- UI: the pegman button (drag him onto the scene or tap him) and, in street view, a pad and an exit button.
  const ui=document.createElement('div');ui.id='street-ui';
  const man='<svg viewBox="0 0 24 32" width="22" height="30" aria-hidden="true"><circle cx="12" cy="6" r="4.6" fill="#ffc21a" stroke="#a87400" stroke-width="1"/><path d="M5.5 13.5c0-2 1.6-3 3.4-3h6.2c1.8 0 3.4 1 3.4 3v8.3h-2.6V31h-3.2v-7.8h-1.4V31H8.1v-9.2H5.5z" fill="#ffc21a" stroke="#a87400" stroke-width="1" stroke-linejoin="round"/></svg>';
