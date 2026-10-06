@@ -55017,16 +55017,23 @@ function pilotBoat(g,x,z,rot){const P=new T.Group();P.position.set(x,0,z);P.rota
 // Berth supervisor: yellow hi-vis vest, white helmet, radio in hand. Walks his own patrol circle.
 function berthSupervisor(){const g=new T.Group();g.userData.kind='supervisor';
  const navy='#26303f',skin='#d8b08c',vest='#e6e33a';
- const legs=[-1,1].map(sd=>{const L=new T.Group();L.position.set(0,1.5,sd*.22);g.add(L);box(L,0,-.75,0,.36,1.5,.34,navy);return L;});g.userData.legs=legs;
+ const legs=[-1,1].map(sd=>{const L=new T.Group();L.position.set(0,1.5,sd*.22);g.add(L);box(L,0,-.75,0,.36,1.5,.34,navy);box(L,.08,-1.45,0,.48,.14,.36,'#1d2226');return L;});g.userData.legs=legs;
  box(g,0,2.05,0,.7,1.2,.95,navy);box(g,0,2.1,0,.76,1,1.02,vest);
  for(const y of [1.82,2.32])box(g,0,y,0,.78,.12,1.04,'#f7f7f2');
- for(const sd of [-1,1])box(g,0,2,sd*.62,.32,1.15,.3,navy);
- mesh(g,new T.SphereGeometry(.28,12,8),mat(skin,0,.7),0,2.95,0);
- const helmet=mesh(g,new T.SphereGeometry(.33,14,8,0,Math.PI*2,0,Math.PI/2),mat('#f2f3f0',.05,.4),0,3.02,0);
- box(g,.28,3.03,0,.28,.08,.62,'#f2f3f0');
- const arm=new T.Group();arm.position.set(.05,2.5,-.6);g.add(arm);
- box(arm,0,-.35,0,.28,.9,.28,navy);box(arm,.05,-.78,.05,.16,.4,.2,'#1d2226');beam(arm,[.05,-.95,.05],[.05,-1.35,.05],.02,'#1d2226');
- g.userData.arm=arm;return g;}
+ // Head on a neck pivot (nods and turns while he talks), hard hat with a peak.
+ const head=new T.Group();head.position.set(0,2.72,0);g.add(head);
+ mesh(head,new T.SphereGeometry(.28,12,8),mat(skin,0,.7),0,.23,0);
+ mesh(head,new T.SphereGeometry(.33,14,8,0,Math.PI*2,0,Math.PI/2),mat('#f2f3f0',.05,.4),0,.3,0);box(head,.28,.31,0,.28,.08,.62,'#f2f3f0');
+ // Two arms with an elbow each: shoulder group (upper arm) -> elbow group (forearm, hand).
+ const arm=(sd)=>{const sh=new T.Group();sh.position.set(0,2.52,sd*.6);g.add(sh);box(sh,0,-.28,0,.3,.6,.3,navy);box(sh,0,-.18,0,.32,.1,.32,vest);
+  const el=new T.Group();el.position.set(0,-.56,0);sh.add(el);box(el,0,-.24,0,.26,.5,.26,navy);mesh(el,new T.SphereGeometry(.13,8,6),mat(skin,0,.7),0,-.55,0);return {sh,el};};
+ const L=arm(-1),R=arm(1);
+ // Hand-held radio in the left hand: black body, yellow side grip, stubby antenna, a channel knob and a status LED.
+ const radio=new T.Group();radio.position.set(.06,-.62,0);L.el.add(radio);
+ box(radio,0,0,0,.2,.46,.28,'#16191c');box(radio,0,-.02,.15,.16,.34,.03,'#e2b81f');box(radio,.105,.06,0,.02,.18,.2,'#2b3136');
+ beam(radio,[0,.23,-.06],[0,.62,-.06],.03,'#16191c');cylinder(radio,0,.27,.07,.04,.08,'#3a4047');
+ const led=new T.MeshStandardMaterial({color:'#3a0d0d',emissive:'#ff2a1a',emissiveIntensity:0});mesh(radio,new T.SphereGeometry(.035,8,6),led,0,.25,.02);
+ g.userData.rig={legs,head,L,R,radio,led};g.userData.arm=L.sh;return g;}
 // Town quarter north-east of the terminal: block grid, streets, low-rise housing and a small park.
 // Five-a-side pitch in the city block by the port road: artificial turf, lines, goals with nets, a low fence and ten
 // children (red and blue shirts, a keeper each) playing; the ball wanders round the pitch and the players chase it.
@@ -56017,18 +56024,42 @@ function updateGate(dt){const arms=model.gate&&model.gate.userData.arms;if(!arms
   if(t.s>=GS-.5&&t.s<=GS+32)open=true;/* the trailer clears the arm at GS + 29.3 */}
  const target=open?1:0;gateArm+=Math.max(-1,Math.min(1,target-gateArm))*Math.min(1,dt*2.2);
  for(const a of arms)a.rotation.x=-a.userData.dir*gateArm*Math.PI/2;}
-// Berth supervisor patrols his circle on the apron and works the radio.
-// Berth supervisor: paces a small circle north-east of the yard office (clear of every vehicle lane) with the radio
-// in his hand: a slow lap, then a pause facing the berth while he talks, then the next lap.
-const SUP=Object.freeze({x:11,z:48.2,r:1.8,speed:.8,pause:6});
-function updateSupervisor(t){const s=model.supervisor;if(!s)return;const lap=2*Math.PI*SUP.r/SUP.speed,period=lap+SUP.pause;let u=t%period,a,walking=u<lap;
- const legs=s.userData.legs||[];a=walking?u/lap*2*Math.PI:0;const f=walking?0:(u-lap)/SUP.pause;
- s.position.set(SUP.x+Math.cos(a)*SUP.r,walking?Math.abs(Math.sin(u*4.6))*.04:0,SUP.z-Math.sin(a)*SUP.r);
- // Facing along the tangent while walking (heading a + 90°); on the pause he turns to face the berth (north) and back.
- const ease=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v);},hw=a+Math.PI/2,north=-Math.PI/2;
- s.rotation.y=walking?hw:Math.PI/2+(north-Math.PI/2)*(ease(f*3)-ease(f*3-2));
- const sw=walking?Math.sin(u*4.6)*.4:0;legs.forEach((g,k)=>g.rotation.z=k?sw:-sw);
- if(s.userData.arm)s.userData.arm.rotation.x=walking?-.35:-1.1*Math.min(1,Math.sin(Math.PI*f)*2);}
+// Berth supervisor: runs the operation from his spot on the apron north-east of the yard office (clear of every vehicle
+// lane). He mostly stands facing the berth and works the radio: talks into it (red LED on transmit, head nodding),
+// listens with it at his ear, points the crane drivers to the next bay, waves a tractor on, shows "wait" and "stop" with
+// his free hand, and now and then takes a couple of steps to his second spot and back. One 36 s cycle.
+const SUP=Object.freeze({x:11,z:48.2,r:1.8,spots:[[10.3,48.4],[11.9,47.8]]});
+// Poses: body yaw offset from facing the berth, left (radio) arm [forward, out, elbow], right arm [forward, out, elbow],
+// head [turn, nod]. Angles in radians; forward raises the arm in front, out lifts it sideways, elbow folds the forearm up.
+const SUP_POSE={
+ talk:{yaw:0,L:[.8,-.42,2.2],R:[.15,.08,.35],head:[0,.05]},
+ listen:{yaw:.15,L:[.35,-.55,2.45],R:[.05,.12,.25],head:[.15,-.05]},
+ point:{yaw:.55,L:[.3,-.15,.9],R:[1.45,.12,.15],head:[.3,-.08]},
+ beckon:{yaw:-.6,L:[.3,-.15,.9],R:[1.1,.25,1.2],head:[-.35,0]},
+ wait:{yaw:-.2,L:[.8,-.42,2.2],R:[1.2,.1,1.5],head:[-.1,0]},
+ stop:{yaw:.25,L:[.3,-.15,.9],R:[2.7,.2,.1],head:[.2,-.15]},
+ chop:{yaw:.1,L:[.8,-.42,2.2],R:[.8,.1,1.3],head:[0,.05]},
+ stand:{yaw:0,L:[.15,-.08,.3],R:[.12,.08,.3],head:[0,0]}};
+// Timeline: [start s, pose, spot index, walking to spot].
+const SUP_SEQ=[[0,'talk',0],[6,'listen',0],[10,'point',0],[13.5,'talk',0],[17,'beckon',0],[20.5,'stand',1,true],[23,'wait',1],[26,'chop',1],[29.5,'stop',1],[32,'stand',0,true],[34.5,'talk',0],[36,'talk',0]];
+function updateSupervisor(t){const s=model.supervisor;if(!s||!s.userData.rig)return;const rig=s.userData.rig,C=36,u=((t%C)+C)%C;
+ let k=0;while(k<SUP_SEQ.length-2&&u>=SUP_SEQ[k+1][0])k++;const [t0,n0,sp0]=SUP_SEQ[k],[t1,n1,sp1,walkTo]=SUP_SEQ[k+1];
+ const ease=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v);};
+ // Blend into the next pose over its first 1.2 s; walking legs only while moving between the spots.
+ const prev=SUP_POSE[SUP_SEQ[Math.max(0,k-1)][1]],cur=SUP_POSE[n0],b=ease((u-t0)/1.2),mix=(a,c)=>a+(c-a)*b,P={yaw:mix(prev.yaw,cur.yaw),L:cur.L.map((v,i)=>mix(prev.L[i],v)),R:cur.R.map((v,i)=>mix(prev.R[i],v)),head:cur.head.map((v,i)=>mix(prev.head[i],v))};
+ const moving=!!SUP_SEQ[k][3]&&u-t0<2.2,from=SUP.spots[moving?(sp0?0:1):sp0],to=SUP.spots[sp0],f=moving?ease((u-t0)/2.2):1;
+ const x=from[0]+(to[0]-from[0])*f,z=from[1]+(to[1]-from[1])*f;s.position.set(x,moving?Math.abs(Math.sin(u*5))*.04:0,z);
+ // Facing the berth (north), turned by the pose; while stepping he faces where he is going.
+ const north=-Math.PI/2,walkYaw=Math.atan2(-(to[1]-from[1]),to[0]-from[0]);let yaw=north+P.yaw;if(moving){const w=Math.sin(Math.PI*Math.min(1,(u-t0)/2.2));yaw=yaw+(Math.atan2(Math.sin(walkYaw-yaw),Math.cos(walkYaw-yaw)))*w;}s.rotation.y=yaw;
+ const sw=moving?Math.sin(u*5)*.45:0;rig.legs.forEach((g,i)=>g.rotation.z=i?sw:-sw);
+ // Live touches on top of the pose: nodding and the radio LED while he talks, a beckoning forearm, a chopping hand.
+ const talking=n0==='talk'||n0==='chop'||n0==='wait',nod=talking?Math.sin(u*5.3)*.06+Math.sin(u*2.1)*.04:Math.sin(u*.9)*.03;
+ rig.head.rotation.set(0,P.head[0],P.head[1]+nod);
+ // Out is away from the body: +x rotation swings the left arm (z < 0) out, -x the right one.
+ const setArm=(A,[fw,out,el],sd)=>{A.sh.rotation.set(sd*out,0,fw);A.el.rotation.set(0,0,el);};
+ const R=[...P.R];if(n0==='beckon')R[2]+=Math.max(0,Math.sin(u*6))*.7;if(n0==='chop')R[0]+=Math.sin(u*4.5)*.25;if(n0==='point')R[0]+=Math.sin(u*1.3)*.04;
+ setArm(rig.L,P.L,1);setArm(rig.R,R,-1);
+ rig.led.emissiveIntensity=talking?(Math.sin(u*9)>-.2?2.2:.3):(n0==='listen'?(Math.sin(u*3)>.6?1:0):0);rig.led.emissive.set(n0==='listen'?'#2aff5a':'#ff2a1a');}
 function updateYard(){for(const [id,p] of Object.entries(model.cargo))p.visible=!(motion.cargoTaken||[]).includes(id);model.twistlocks.userData.update(motion.tractors.find(t=>t.stop==='locks'&&t.wait>0),motion.tractors.reduce((n,t)=>n+(t.lockVisits||0),0),motion.time,motion.tractors.some(t=>t.loaded&&!t.unlocked&&t.stop!=='locks'&&t.s>PotiOps.TT_STOPS[4].s-22.7&&t.s<PotiOps.TT_STOPS[4].s+.8));const rs=updateReach(),R=PotiOps.RS,seq=PotiOps.CRANE_SEQ,active=[null,null,null];
  motion.tractors.forEach((tt,i)=>{const L=model.tractors[i];placeVehicle(s=>PotiOps.tractorPosition(s,tt.rsSlot,tt.bypass),tt.s,PotiOps.TT,{head:L.tractor,trailer:L.trailer});
   let show=tt.loaded;
