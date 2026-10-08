@@ -54726,14 +54726,17 @@ function tankerJetty(root){const g=new T.Group();g.userData.kind='jetty';root.ad
  // Gate 1 on the diagonal staging road, turned 30 degrees.
  const gateGroup=gate1(g,100,67,-Math.PI/6);root.userData.gate=gateGroup;
  // Diagonal staging road and the two connectors down to the main road.
- const approach=[[240,100],[120,100]];for(let i=1;i<=30;i++){const t=i/30,u=1-t;approach.push([u*u*u*120+3*u*u*t*91+3*u*t*t*122+t*t*t*110,u*u*u*100+3*u*u*t*100+3*u*t*t*74+t*t*t*67]);}approach.push([92.1,56.67],[88.1,49.74]);roadRibbon(g,approach,8);
- roadRibbon(g,[[236,25.5],[242,25.5],[248,28],[250,33.5],[250,80],[250,90],[247,97],[240,100]],8);
- cylinder(g,240,.185,100,4.15,.05,'#4b5254');
+ const approach=[[240,100],[120,100]];for(let i=1;i<=30;i++){const t=i/30,u=1-t;approach.push([u*u*u*120+3*u*u*t*91+3*u*t*t*122+t*t*t*110,u*u*u*100+3*u*u*t*100+3*u*t*t*74+t*t*t*67]);}// Into the truck lane on the trucks' own 8 m turn (centre 96.1, 49.74), then a few metres straight down the lane, so
+ // the ribbon meets the lane square instead of cutting the corner.
+ for(let k=0;k<=8;k++){const a=2*Math.PI/3+k/8*Math.PI/3;approach.push([96.1+8*Math.cos(a),49.74+8*Math.sin(a)]);}approach.push([88.1,46],[88.1,43]);
+ // The loop back from the east road and the staging road are one ribbon, so the corner at (240, 100) is a single smooth
+ // turn (it used to be two ribbons with a round patch over the joint).
+ roadRibbon(g,[[236,25.5],[242,25.5],[248,28],[250,33.5],[250,80],[250,90],[247,97],...approach],8);
  // Parking mark painted white on the staging lot, centred between the rail fence (z = 62) and the truck road (z = 96).
  {const c=document.createElement('canvas');c.width=c.height=256;const q=c.getContext('2d');q.font='bold 230px sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillStyle='#f4f3ec';q.fillText('P',128,138);
   const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const pg=new T.Group();pg.position.set(180,.13,79);pg.rotation.y=Math.PI/2;g.add(pg);
   const m=new T.Mesh(new T.PlaneGeometry(9,9),new T.MeshStandardMaterial({map:tex,transparent:true,depthWrite:false,roughness:.9}));m.rotation.x=-Math.PI/2;m.renderOrder=1;pg.add(m);}
- box(g,88.1,.07,36,8,.14,34,'#4b5254');
+ box(g,88.1,.07,34.37,8,.14,30.74,'#4b5254'); // up to the start of the turn (z = 49.74)
  // Paved access lane on the pier, so the trucks no longer drive over bare concrete.
  box(g,64,.07,14.5,48,.14,8,'#4b5254');box(g,84.5,.07,18.5,7,.14,8,'#4b5254');
  // Unmarked apron access lane: continuous asphalt without dashed paint.
@@ -55061,7 +55064,10 @@ function miniPitch(root,cx,cz){const g=new T.Group();g.name='Mini football pitch
  // Players: a keeper and four outfield players per side.
  const kids=[],ball=mesh(g,new T.SphereGeometry(.3,12,9),mat('#f7f7f2',0,.5),0,.3,0);
  const team=(shirt,shorts,sd)=>[[sd*-10.6,0,true],[sd*-6,-3.5],[sd*-6,3.5],[sd*-2,-1.5],[sd*2.5,2]].forEach(([hx,hz,keeper],k)=>{
-  const p=pedestrian(shirt,shorts,['#3a2a1e','#1e1a17','#6b4a2a','#2b2b2b','#8a5a2b'][(k+(sd>0?2:0))%5]);p.scale.setScalar(.6);if(p.userData.parts.umbrella)p.userData.parts.umbrella.visible=false;
+  // Keepers wear their own kit (lime for the reds' keeper, green for the blues'), black shorts and big two-tone gloves.
+  const kit=keeper?(sd>0?['#d7e83a','#1b1d20','#f4f4f0','#ff7a1a']:['#22a35a','#1b1d20','#f4f4f0','#1f4fd8']):[shirt,shorts];
+  const p=pedestrian(kit[0],kit[1],['#3a2a1e','#1e1a17','#6b4a2a','#2b2b2b','#8a5a2b'][(k+(sd>0?2:0))%5]);p.scale.setScalar(.6);if(p.userData.parts.umbrella)p.userData.parts.umbrella.visible=false;
+  if(keeper)for(const A of p.userData.parts.arms){box(A,0,-1.1,0,.34,.38,.34,kit[2]);box(A,0,-.9,0,.36,.12,.36,kit[3]);box(A,.18,-1.12,0,.04,.3,.28,kit[3]);}
   p.position.set(hx,0,hz);g.add(p);kids.push({p,home:[hx,hz],keeper:!!keeper,sd,v:[0,0],face:sd>0?Math.PI:0});});
  team('#d8322c','#f2f2f2',1);team('#2e62c9','#1c2a44',-1);
  let last=null,phase=0;
@@ -55173,16 +55179,17 @@ function churchPark(root){const g=new T.Group();g.userData.kind='park';root.add(
 // Covered pedestrian bridge over the land road, yard and rail. North stairs land in the east strip of the
 // staging yard (clear of truck lanes), south stairs turn west onto the waterfront.
 function footbridge(root){const g=new T.Group();g.userData.kind='footbridge';root.add(g);
- const X=257,Y=7,z0=1,z1=68.5,steel='#8d969a',deck='#b9bdb6',glass=mat('#9ec6d6',.2,.1);glass.transparent=true;glass.opacity=.35;
+ // H: roof height over the deck, clear of a walker's head (people here are about 3.4 m to the top of the hat).
+ const X=257,Y=7,H=4.5,z0=1,z1=68.5,steel='#8d969a',deck='#b9bdb6',glass=mat('#9ec6d6',.2,.1);glass.transparent=true;glass.opacity=.35;
  const L=z1-z0,zc=(z0+z1)/2;
  for(const sd of [-1,1])box(g,X+sd*1.55,Y+1.08,zc,.06,.08,L,lampHead);
- for(let z=5;z<z1;z+=12){box(g,X,Y+3.02,z,1.4,.08,.35,lampHead);glow(g,X,Y+2.9,z,.8);const light=new T.PointLight('#ffe4bb',18,14,1.4);light.position.set(X,Y+2.65,z);light.visible=false;g.add(light);gardenLights.push(light);}
+ for(let z=5;z<z1;z+=12){box(g,X,Y+H-.18,z,1.4,.08,.35,lampHead);glow(g,X,Y+H-.3,z,.8);const light=new T.PointLight('#ffe4bb',18,14,1.4);light.position.set(X,Y+H-.55,z);light.visible=false;g.add(light);gardenLights.push(light);}
 
  box(g,X,Y-.25,zc,3.4,.5,L,deck);
  for(const sd of [-1,1]){box(g,X+sd*1.62,Y+.55,zc,.08,1.1,L,glass);box(g,X+sd*1.62,Y+1.15,zc,.12,.12,L,steel);box(g,X+sd*1.62,Y+.05,zc,.14,.14,L,steel);}
  for(let z=z0+1;z<z1;z+=4)for(const sd of [-1,1])box(g,X+sd*1.62,Y+.6,z,.12,1.2,.12,steel);
- for(let z=z0;z<=z1;z+=8.4){for(const sd of [-1,1])beam(g,[X+sd*1.6,Y+1.2,z],[X+sd*1.3,Y+3.1,z],.06,steel);box(g,X,Y+3.15,z,3.2,.08,.12,steel);}
- const roof=box(g,X,Y+3.2,zc,3.8,.12,L,mat('#dfe6e8',.3,.3));roof.material.transparent=true;roof.material.opacity=.8;
+ for(let z=z0;z<=z1;z+=8.4){for(const sd of [-1,1])beam(g,[X+sd*1.6,Y+1.2,z],[X+sd*1.3,Y+H-.1,z],.06,steel);box(g,X,Y+H-.05,z,3.2,.08,.12,steel);}
+ const roof=box(g,X,Y+H,zc,3.8,.12,L,mat('#dfe6e8',.3,.3));roof.material.transparent=true;roof.material.opacity=.8;
  for(const z of [4.6,32.2,57,64.8])for(const sd of [-1,1])box(g,X+sd*1.2,(Y-.5)/2,z,.45,Y-.5,.45,steel);
  const flight=(ax,az,bx,bz)=>{const n=18,len=Math.hypot(bx-ax,bz-az),ang=Math.atan2(-(bz-az),bx-ax);
   for(let i=0;i<n;i++){const f=(i+.5)/n,y=Y*(1-f),t=box(g,ax+(bx-ax)*f,y-.09,az+(bz-az)*f,len/n+.05,.18,3.2,deck);t.rotation.y=ang;}
@@ -56113,7 +56120,8 @@ function updateWalkers(t){const W=model.walkers;if(!W)return;const L=WALK.len;
   parts.phone.visible=photo;
   if(photo){parts.arms[1].rotation.z=1.55;parts.arms[1].rotation.x=0;parts.flash.visible=((ph-leg)%2.2)<.12;}
   else{parts.arms[1].rotation.z=swing*.8;parts.flash.visible=false;}
- const wet=(Number(weather.precip)||0)>0;parts.umbrella.visible=wet;
+ // Under the skywalk's roof (on its deck) they fold the umbrella.
+ const wet=(Number(weather.precip)||0)>0&&p.position.y<6.5;parts.umbrella.visible=wet;
  if(wet){parts.arms[0].rotation.z=.95;parts.phone.visible=false;parts.flash.visible=false;parts.arms[1].rotation.z=swing*.5;}
  });}
 function updateModel(){for(const f of shipFlags){const p=f.geometry.attributes.position,hw=f.userData.hw||2.25;for(let i=0;i<p.count;i++){const x=p.getX(i);p.setZ(i,Math.sin(x*2.3-motion.time*3)*.16*(x+hw)/(2*hw));}p.needsUpdate=true;f.geometry.computeVertexNormals();}anemometers.forEach(o=>{const w=Math.max(weather.wind||0,weather.gust||0),target=paused?0:.4+w*.85;o.userData.spin=(o.userData.spin||0)+(target-(o.userData.spin||0))*Math.min(1,lastDt*1.5);o.rotation.y+=o.userData.spin*lastDt;});for(const palm of model.palms)palm.userData.update(motion.time,weather,paused?0:lastDt);const dp=PotiOps.dredgerPosition(motion.dredgerProgress);model.dredger.position.set(dp[0],0,dp[1]);model.dredger.rotation.y=dp[2];const t=motion.time,p=PotiOps.vesselPosition(motion.vesselProgress);const sea=weather.wave||0;
