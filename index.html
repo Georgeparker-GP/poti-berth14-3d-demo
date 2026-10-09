@@ -54736,12 +54736,14 @@ function tankerJetty(root){const g=new T.Group();g.userData.kind='jetty';root.ad
  {const c=document.createElement('canvas');c.width=c.height=256;const q=c.getContext('2d');q.font='bold 230px sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillStyle='#f4f3ec';q.fillText('P',128,138);
   const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const pg=new T.Group();pg.position.set(180,.13,79);pg.rotation.y=Math.PI/2;g.add(pg);
   const m=new T.Mesh(new T.PlaneGeometry(9,9),new T.MeshStandardMaterial({map:tex,transparent:true,depthWrite:false,roughness:.9}));m.rotation.x=-Math.PI/2;m.renderOrder=1;pg.add(m);}
- box(g,88.1,.07,34.37,8,.14,30.74,'#4b5254'); // up to the start of the turn (z = 49.74)
+ box(g,88.1,.07,40.37,8,.14,18.74,'#4b5254'); // from the main road's edge (z = 31) up to the start of the turn (z = 49.74)
  // Paved access lane on the pier, so the trucks no longer drive over bare concrete.
- box(g,64,.07,14.5,48,.14,8,'#4b5254');box(g,84.5,.07,18.5,7,.14,8,'#4b5254');
+ // Pier access lane up to the main road's west edge (x = 70); the trucks' turn in from the lane lies on the main road
+ // itself, so nothing is laid over it (two coplanar slabs flickered there as a dark patch).
+ box(g,55,.07,14.5,30,.14,8,'#4b5254');
  // Unmarked apron access lane: continuous asphalt without dashed paint.
 
- for(let z2=26;z2<50;z2+=6)box(g,88.1,.16,z2,.2,.04,2.6,'#e7e3cf');
+ for(let z2=34;z2<50;z2+=6)box(g,88.1,.16,z2,.2,.04,2.6,'#e7e3cf');
  // New land north of the yard, up to the marked line: paved truck staging area with a fence.
  box(g,166,-1.6,88,192,3.2,52,deck);box(g,166,.05,90,180,.1,40,'#9aa09a');
  for(let x=80;x<254;x+=10.6)box(g,x,.12,90,.12,.03,36,'#e8e4cf');for(const z of [72,90,108])box(g,166,.12,z,178,.03,.12,'#e8e4cf');
