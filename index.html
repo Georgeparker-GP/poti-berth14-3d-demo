@@ -54738,8 +54738,8 @@ function tankerJetty(root){const g=new T.Group();g.userData.kind='jetty';root.ad
  roadRibbon(g,[[250,31],[250,33.5],[250,50],[250,80],[250,90],[247,97],...approach],8,(x,z)=>!(x<92.2&&z<48.6)); // the lane below z = 48.6 has its own dashes
  // Turn arrow in the eastbound kerb lane (between the lane line at z = 25.5 and the kerb) before the trucks' turn north into the loop road (x = 250).
  {const w=mat('#f2f1ea',0,.8),y=.16,seg=(ax,az,bx,bz)=>{const m=box(g,(ax+bx)/2,y,(az+bz)/2,Math.hypot(bx-ax,bz-az),.03,.5,w);m.rotation.y=Math.atan2(-(bz-az),bx-ax);m.castShadow=false;};
-  seg(224,27.6,231.4,27.6);seg(231.2,27.6,232.4,28.1);seg(232.4,27.9,232.4,28.9);
-  const sh=new T.Shape();sh.moveTo(-.9,0);sh.lineTo(.9,0);sh.lineTo(0,1.6);sh.closePath();const head=new T.Mesh(new T.ShapeGeometry(sh),w);head.rotation.x=-Math.PI/2;head.rotation.z=Math.PI;head.position.set(232.4,y+.01,28.8);head.scale.set(.85,.85,1);g.add(head);}
+  seg(231,27.6,238.4,27.6);seg(238.2,27.6,239.4,28.1);seg(239.4,27.9,239.4,28.9);
+  const sh=new T.Shape();sh.moveTo(-.9,0);sh.lineTo(.9,0);sh.lineTo(0,1.6);sh.closePath();const head=new T.Mesh(new T.ShapeGeometry(sh),w);head.rotation.x=-Math.PI/2;head.rotation.z=Math.PI;head.position.set(239.4,y+.01,28.8);head.scale.set(.85,.85,1);g.add(head);}
  // Parking mark painted white on the staging lot, centred between the rail fence (z = 62) and the truck road (z = 96).
  {const c=document.createElement('canvas');c.width=c.height=256;const q=c.getContext('2d');q.font='bold 230px sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillStyle='#f4f3ec';q.fillText('P',128,138);
   const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const pg=new T.Group();pg.position.set(180,.13,79);pg.rotation.y=Math.PI/2;g.add(pg);
