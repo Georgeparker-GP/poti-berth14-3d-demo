@@ -54658,9 +54658,13 @@ function bulkVessel(scale){const g=new T.Group();g.name='vessel';g.userData.kind
  return g;}
 // Tanker berth: a solid mole south of Berth 12, almost parallel to it, reached by a causeway road from the land.
 // It narrows the harbour entrance together with the breakwater. Seaward face and head are armoured with tetrapods.
-function roadRibbon(g,points,width){const curve=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(p[0],.19,p[1])),false,'centripetal');const pts=curve.getSpacedPoints(Math.ceil(curve.getLength()/1.2)),v=[],idx=[];
+function roadRibbon(g,points,width,dashes){const curve=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(p[0],.19,p[1])),false,'centripetal');const pts=curve.getSpacedPoints(Math.ceil(curve.getLength()/1.2)),v=[],idx=[];
  for(let i=0;i<pts.length;i++){const p=pts[i],dir=pts[Math.min(i+1,pts.length-1)].clone().sub(pts[Math.max(0,i-1)]).normalize(),nx=-dir.z*width/2,nz=dir.x*width/2;v.push(p.x+nx,.19,p.z+nz,p.x-nx,.19,p.z-nz);if(i<pts.length-1){const k=i*2;idx.push(k,k+2,k+1,k+1,k+2,k+3);}}
- const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(v,3));geo.setIndex(idx);geo.computeVertexNormals();const road=new T.Mesh(geo,new T.MeshStandardMaterial({color:'#4b5254',roughness:.95,side:T.DoubleSide}));road.receiveShadow=true;g.add(road);return road;}
+ const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(v,3));geo.setIndex(idx);geo.computeVertexNormals();const road=new T.Mesh(geo,new T.MeshStandardMaterial({color:'#4b5254',roughness:.95,side:T.DoubleSide}));road.receiveShadow=true;g.add(road);
+ // Centre-line dashes (2.6 m every 6 m) following the curve, skipped where keep(x, z) says another road's marking is there.
+ if(dashes){const len=curve.getLength(),dm=mat('#e7e3cf');for(let d=3;d<len;d+=6){const u=d/len,p=curve.getPointAt(u),t=curve.getTangentAt(u);if(!dashes(p.x,p.z))continue;
+   const m=box(g,p.x,.21,p.z,2.6,.03,.2,dm);m.rotation.y=Math.atan2(-t.z,t.x);m.castShadow=false;}}
+ return road;}
 function dredger(){const g=new T.Group();g.name='NIKO NIKOLADZE';g.userData.kind='dredger';g.position.set(63,0,-3.5);g.rotation.y=Math.PI;
  const blue='#1557a3',white='#e3e6df',yellow='#b9923e',steel='#8c9697';
  const hull=mesh(g,hullGeometry(),mat(blue,.28,.55));hull.scale.set(.30,.56,.43);hull.material.side=T.DoubleSide;
@@ -54731,7 +54735,11 @@ function tankerJetty(root){const g=new T.Group();g.userData.kind='jetty';root.ad
  for(let k=0;k<=8;k++){const a=2*Math.PI/3+k/8*Math.PI/3;approach.push([96.1+8*Math.cos(a),49.74+8*Math.sin(a)]);}approach.push([88.1,46],[88.1,43]);
  // The loop back from the east road and the staging road are one ribbon, so the corner at (240, 100) is a single smooth
  // turn (it used to be two ribbons with a round patch over the joint).
- roadRibbon(g,[[236,25.5],[242,25.5],[248,28],[250,33.5],[250,80],[250,90],[247,97],...approach],8);
+ roadRibbon(g,[[250,31],[250,33.5],[250,50],[250,80],[250,90],[247,97],...approach],8,(x,z)=>!(x<93&&z<51));
+ // Turn arrow in the eastbound kerb lane (between the lane line at z = 25.5 and the kerb) before the trucks' turn north into the loop road (x = 250).
+ {const w=mat('#f2f1ea',0,.8),y=.16,seg=(ax,az,bx,bz)=>{const m=box(g,(ax+bx)/2,y,(az+bz)/2,Math.hypot(bx-ax,bz-az),.03,.5,w);m.rotation.y=Math.atan2(-(bz-az),bx-ax);m.castShadow=false;};
+  seg(224,27.6,231.4,27.6);seg(231.2,27.6,232.4,28.1);seg(232.4,27.9,232.4,28.9);
+  const sh=new T.Shape();sh.moveTo(-.9,0);sh.lineTo(.9,0);sh.lineTo(0,1.6);sh.closePath();const head=new T.Mesh(new T.ShapeGeometry(sh),w);head.rotation.x=-Math.PI/2;head.rotation.z=Math.PI;head.position.set(232.4,y+.01,28.8);head.scale.set(.85,.85,1);g.add(head);}
  // Parking mark painted white on the staging lot, centred between the rail fence (z = 62) and the truck road (z = 96).
  {const c=document.createElement('canvas');c.width=c.height=256;const q=c.getContext('2d');q.font='bold 230px sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillStyle='#f4f3ec';q.fillText('P',128,138);
   const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const pg=new T.Group();pg.position.set(180,.13,79);pg.rotation.y=Math.PI/2;g.add(pg);
@@ -55197,10 +55205,11 @@ function footbridge(root){const g=new T.Group();g.userData.kind='footbridge';roo
   for(let i=0;i<n;i++){const f=(i+.5)/n,y=Y*(1-f),t=box(g,ax+(bx-ax)*f,y-.09,az+(bz-az)*f,len/n+.05,.18,3.2,deck);t.rotation.y=ang;}
   const nx=-(bz-az)/len,nz=(bx-ax)/len;for(const sd of [-1,1])beam(g,[ax+nx*sd*1.6,Y+1.1,az+nz*sd*1.6],[bx+nx*sd*1.6,1.1,bz+nz*sd*1.6],.05,steel);
   box(g,(ax+bx)/2,Y*.35,(az+bz)/2,.4,Y*.7,.4,steel);};
- flight(X,z1,X,80);box(g,X,.05,81.5,4.2,.1,3,'#b9b4a6');
+ flight(X,z1,X,80);
  box(g,X,Y-.25,z0-1.7,3.4,.5,3.4,deck);flight(X-1.7,z0-1.7,X-19,z0-1.7);box(g,X-20.5,.05,z0-1.7,3,.1,4.2,'#b9b4a6');
  // Sidewalk from the town to the north stairs, along the free east edge of the staging yard.
- box(g,X,.09,99,3,.1,34,'#c9c3b0');
+ // One footpath, as wide as the stairs, from their foot (z = 80) to the town: no separate landing pad beside it.
+ box(g,X,.09,98,3.4,.1,36,'#c9c3b0');
  return g;}
 // Pedestrian: varied clothes, swinging arms and legs; one hand can hold up a phone.
 function pedestrian(shirt,trousers,hair){const g=new T.Group();g.userData.kind='pedestrian';const skin=mat('#d8b08c',0,.7);
