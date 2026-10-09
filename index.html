@@ -54420,7 +54420,7 @@ function terminalBuilding(){const g=new T.Group();g.userData.kind='terminal';g.p
  box(g,0,2.6,-5.6,11,.35,2.4,frame);box(g,-5.4,2.6,-5.6,.4,5.2,2.4,frame);box(g,5.4,2.6,-5.6,.4,5.2,2.4,frame);box(g,0,5.1,-5.6,11.2,.5,2.4,frame);
  box(g,0,2.5,-5.5,10.4,4.8,.1,glass);for(let x=-4.5;x<=4.6;x+=1.5)box(g,x,2.5,-5.58,.12,4.8,.08,'#56676b');
  box(g,0,4.55,-6.82,9.6,.6,.1,'#2a4fb4');
- box(g,-2.4,4.6,-6,.7,9.2,.7,white);
+ box(g,-6.4,4.6,-6,.7,9.2,.7,white); // roof column just beside the entrance portal, not through it
  // Butterfly roof: two wings rising towards the ends, deep overhang.
  slab(g,[0,8.7,-1],[16.5,11.2,-1],.55,15,white).rotation.order='XYZ';
  slab(g,[0,8.7,-1],[-16.5,11.2,-1],.55,15,white);
@@ -55217,7 +55217,8 @@ function footbridge(root){const g=new T.Group();g.userData.kind='footbridge';roo
  const flight=(ax,az,bx,bz)=>{const n=18,len=Math.hypot(bx-ax,bz-az),ang=Math.atan2(-(bz-az),bx-ax);
   for(let i=0;i<n;i++){const f=(i+.5)/n,y=Y*(1-f),t=box(g,ax+(bx-ax)*f,y-.09,az+(bz-az)*f,len/n+.05,.18,3.2,deck);t.rotation.y=ang;}
   const nx=-(bz-az)/len,nz=(bx-ax)/len;for(const sd of [-1,1])beam(g,[ax+nx*sd*1.6,Y+1.1,az+nz*sd*1.6],[bx+nx*sd*1.6,1.1,bz+nz*sd*1.6],.05,steel);
-  box(g,(ax+bx)/2,Y*.35,(az+bz)/2,.4,Y*.7,.4,steel);};
+  // Support column under the middle of the flight, up to the underside of the treads (it used to run up through them).
+  box(g,(ax+bx)/2,(Y*.5-.3)/2,(az+bz)/2,.4,Y*.5-.3,.4,steel);};
  flight(X,z1,X,80);
  box(g,X,Y-.25,z0-1.7,3.4,.5,3.4,deck);flight(X-1.7,z0-1.7,X-19,z0-1.7);box(g,X-20.5,.05,z0-1.7,3,.1,4.2,'#b9b4a6');
  // Sidewalk from the town to the north stairs, along the free east edge of the staging yard.
