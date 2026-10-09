@@ -54755,7 +54755,20 @@ function tankerJetty(root){const g=new T.Group();g.userData.kind='jetty';root.ad
  // New land north of the yard, up to the marked line: paved truck staging area with a fence.
  box(g,166,-1.6,88,192,3.2,52,deck);box(g,166,.05,90,180,.1,40,'#9aa09a');
  for(let x=80;x<254;x+=10.6)box(g,x,.12,90,.12,.03,36,'#e8e4cf');for(const z of [72,90,108])box(g,166,.12,z,178,.03,.12,'#e8e4cf');
- for(let x=76;x<256;x+=6){if(x>251)continue;box(g,x,1.1,113.6,.12,2.2,.12,'#5b625f');}for(const y of [.7,1.9])box(g,164,y,113.6,182,.07,.07,'#5b625f');
+ // Fence along the town side, with a double gate where the town street (x = 206) meets the yard.
+ const GX=206,GW=4.5;
+ for(let x=76;x<256;x+=6){if(x>251||Math.abs(x-GX)<GW+.5)continue;box(g,x,1.1,113.6,.12,2.2,.12,'#5b625f');}
+ for(const y of [.7,1.9])for(const [a,b2] of [[73,GX-GW],[GX+GW,255]])box(g,(a+b2)/2,y,113.6,b2-a,.07,.07,'#5b625f');
+ {const steel='#4e5a5e',mesh2=new T.MeshStandardMaterial({color:'#7d878a',transparent:true,opacity:.45,side:T.DoubleSide,depthWrite:false});
+  for(const sd of [-1,1]){box(g,GX+sd*GW,1.3,113.6,.3,2.6,.3,steel);cylinder(g,GX+sd*GW,2.65,113.6,.2,.1,steel);
+   // Closed leaf: frame, diagonal brace and mesh infill, meeting in the middle with a latch.
+   const lx=GX+sd*GW/2;for(const y of [.25,2.05])box(g,lx,y,113.6,GW-.15,.08,.08,steel);
+   for(const x of [GX+sd*.08,GX+sd*(GW-.15)])box(g,x,1.15,113.6,.08,1.9,.08,steel);
+   beam(g,[GX+sd*(GW-.2),.3,113.6],[GX+sd*.15,2,113.6],.035,steel);
+   const m=mesh(g,new T.PlaneGeometry(GW-.25,1.75),mesh2,lx,1.15,113.6);m.castShadow=false;}
+  box(g,GX,1.15,113.55,.16,.22,.12,'#c9a227');
+  // Red-and-white sign on the gate.
+  box(g,GX-1.6,1.5,113.5,.9,.6,.04,'#f2f1ea');box(g,GX-1.6,1.5,113.47,.7,.12,.02,'#c0392b');}
  for(let x=84;x<250;x+=24){if(x>90&&x<118)continue;streetLight(g,x,66,1);}
  box(g,148.4,.07,-115.5,208.8,.14,7,asph);
  for(let x=48;x<250;x+=6)box(g,x,.16,-115.5,2.6,.04,.2,'#e7e3cf');
