@@ -54407,10 +54407,9 @@ function church(){const g=new T.Group();g.position.set(90,0,-6);g.userData.kind=
  box(g,3.9,2.8,1.4,.5,.8,1.2,'#aeb6b1');return g;
 }
 // Port building from the reference photo: butterfly roof, glazed grid facade, central tower. No lettering.
-// Rotated so the lawn and entrance face the container yard (+x).
-function terminalBuilding(){const g=new T.Group();g.userData.kind='terminal';g.position.set(-51,0,37.05);g.rotation.y=-Math.PI/2;
+// Rotated so the entrance faces the container yard (+x).
+function terminalBuilding(){const g=new T.Group();g.userData.kind='terminal';g.position.set(-54,0,26);g.rotation.y=-Math.PI/2; // at the west end, on the Berth 12 side (CCTV photo)
  const white='#e9ebe6',shade='#c9cdc8',glass=mat('#2c4550',.3,.25),frame='#d9ddd8';
- box(g,0,.1,-9,32,.2,8,'#5f8a4c');box(g,0,.12,-9,4,.2,8,'#b9b8ad');
  // Glazed two-storey body with a dark mullion grid.
  box(g,0,4.2,0,25,8.4,9,glass);
  for(let x=-12;x<=12.01;x+=1.5)box(g,x,4.2,-4.55,.16,8.4,.12,'#1d2a2e');
@@ -54685,7 +54684,8 @@ function dredger(){const g=new T.Group();g.name='NIKO NIKOLADZE';g.userData.kind
  for(const sd of [-1,1]){const sign=mesh(g,new T.PlaneGeometry(12,1.5),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),5,2.2,sd*3.45);if(sd<0)sign.rotation.y=Math.PI;}
  sternName(g,'NIKO NIKOLADZE',-53*.3,2.3,4.4);
  return g;}
-function flatRackStack(root){const g=new T.Group();g.name='Six folded flat racks';g.position.set(-53,0,14);root.add(g);
+// In front of the passenger terminal, beside its entrance, as on the CCTV photo.
+function flatRackStack(root){const g=new T.Group();g.name='Six folded flat racks';g.position.set(-40,0,37.5);g.rotation.y=Math.PI/2;root.add(g);
  const palette=['#183e69','#923d2c','#64796e'];for(let k=0;k<6;k++){const y=.5+k*.62,col=palette[k%3];for(const z of [-1.22,1.22])box(g,0,y,z,10,.48,.23,col);box(g,0,y+.12,0,9.5,.16,2.3,'#968b6d');for(let x=-4.5;x<=4.5;x+=.6)box(g,x,y+.22,0,.045,.03,2.25,'#625d4f');for(const x of [-4.8,4.8]){box(g,x,y+.2,0,.35,.48,2.6,col);for(const z of [-1.2,1.2])box(g,x,y+.42,z,.32,.15,.3,'#b9bcae');}for(const z of [-1.35,1.35])paintedText(g,k%3===0?'seaco':'FLAT RACK',0,y,z,4,.38,z<0?Math.PI:0,'#e7d98e');}
 }
 function twistlockStation(root){
@@ -55397,7 +55397,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const truckColors=['#eef0f0','#b8302c','#1f4f9c','#e07a1f','#2f7d4a','#5b6672','#d9b32a','#8e44ad','#16a085','#34495e'];
  const truckCount=(root.PotiOps&&root.PotiOps.TRUCK&&root.PotiOps.TRUCK.count)||truckColors.length;
  const trucks=Array.from({length:truckCount},(_,i)=>truckColors[i%truckColors.length]).map(c=>{const truck=roadTruck(c),tr=semiTrailer();root.add(truck);root.add(tr);return {truck,trailer:tr,load:tr.userData.load};});
- label(root,'BERTH 14',8,1,63.1,21,'#294c50');label(root,'BERTH 12',8,1.2,5.1,17,'#294c50');label(root,'B15',77,1.2,98,15,'#294c50');
+ label(root,'BERTH 14',8,1,63.1,21,'#294c50');label(root,'BERTH 13',-56,1,52,17,'#294c50');label(root,'BERTH 12',8,1.2,5.1,17,'#294c50');label(root,'B15',77,1.2,98,15,'#294c50');
  const moored=vessel('#3fa9da',1,'maersk');moored.position.set(-8,0,80.1);root.add(moored);
  const moving=bulkVessel(.51);root.add(moving);const dredge=dredger();root.add(dredge);
  // West/south-west breakwater (green line) and the tanker berth south of the land (yellow line).
