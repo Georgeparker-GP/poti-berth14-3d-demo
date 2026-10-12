@@ -56223,7 +56223,12 @@ function updateModel(){for(const f of shipFlags){const p=f.geometry.attributes.p
  if(model.dredger){const mooredSea=Math.min(sea,.7);model.dredger.position.y=Math.sin(t*.8+.6)*mooredSea*.2;model.dredger.rotation.z=Math.sin(t*.7)*mooredSea*.03;model.dredger.rotation.x=Math.sin(t*.95)*mooredSea*.022;}
  if(model.khibula){const k=model.khibula;k.position.y=Math.sin(t*.55+.8)*Math.min(sea,1.5)*.12;k.rotation.z=Math.sin(t*.5)*Math.min(sea,1.5)*.012;k.rotation.x=Math.sin(t*.62+1)*Math.min(sea,1.5)*.008;}
  if(model.tanker){model.tanker.position.y=Math.sin(t*.45+2)*sea*.05;model.tanker.rotation.z=Math.sin(t*.5+2)*sea*.004;}updateYard();updateWalkers(motion.time);updateGate(simDt);updateTugs(t);moorings.update();if(model.dockCrew)model.dockCrew.update(t);if(model.football)model.football.update(t);
- for(const e of model.root.userData.seedEaters||[]){const u=((t+e.phase)%4.6+4.6)%4.6,up=u<1.2?Math.sin(Math.PI*u/1.2):0;/* no elbow: the arm shortens as it comes up, so the hand reaches the mouth */e.eat.rotation.z=.75+up*1.25;e.eat.rotation.x=e.sd*.5*up;e.eat.scale.y=1-.45*up;e.hold.rotation.z=.75;e.p.userData.parts.legs.forEach(l=>l.rotation.z=1.05);}
+ const benchRain=(Number(weather.precip)||0)>0;
+ for(const e of model.root.userData.seedEaters||[]){const um=e.p.userData.parts.umbrella;
+  // In the rain the one on the right opens an umbrella over both of them (held in the hand on the partner's side, so he
+  // stops eating); the other keeps cracking seeds under it.
+  if(e.sd>0){um.visible=benchRain;um.position.set(.75,3.9,.62);if(benchRain){e.eat.rotation.set(-.35,0,.95);e.eat.scale.y=1;e.hold.rotation.z=.75;continue;}}
+  const u=((t+e.phase)%4.6+4.6)%4.6,up=u<1.2?Math.sin(Math.PI*u/1.2):0;/* no elbow: the arm shortens as it comes up, so the hand reaches the mouth */e.eat.rotation.z=.75+up*1.25;e.eat.rotation.x=e.sd*.5*up;e.eat.scale.y=1-.45*up;e.hold.rotation.z=.75;e.p.userData.parts.legs.forEach(l=>l.rotation.z=1.05);}
  for(const b of model.buoys||[]){const on=((t+b.phase)%3)<1;b.glow.visible=night&&on;b.lamp.emissiveIntensity=on?(night?4:1.2):.15;
   b.group.position.y=Math.sin(t*1.1+b.x*.3)*.12*(1+Math.min(weather.wave||0,3));b.group.rotation.x=Math.sin(t*.9+b.z)*.04*(1+Math.min(weather.wave||0,3));b.group.rotation.z=Math.sin(t*.7+b.x)*.04*(1+Math.min(weather.wave||0,3));}waterMaterial.uniforms.uTime.value=t;waterMaterial.uniforms.uWave.value=weather.wave||0;}
 
