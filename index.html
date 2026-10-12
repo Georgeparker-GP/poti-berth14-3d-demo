@@ -54721,8 +54721,9 @@ function mechanicsCorner(root){const g=new T.Group();g.name="Mechanics' corner";
  for(const [x,z] of [[-44,56],[-40.5,56.4]]){const F=new T.Group();F.position.set(x,0,z);g.add(F);const red='#c0392b';box(F,0,.18,0,3.2,.3,1.6,red);
   for(const sd of [-1,1]){beam(F,[sd*1.4,.3,0],[0,2.3,0],.09,red);}box(F,0,2.35,0,.5,.3,.5,red);for(const sd of [-1,1])box(F,sd*1.5,.4,0,.25,.5,1.8,'#9b2b20');}
  // Mesh fence along the east side of the corner and stacked plastic barriers inside it.
- {const steel='#7d878a';for(let z=44;z<=57.01;z+=2.6)beam(g,[-37.6,0,z],[-37.6,2,z],.05,steel);for(const y of [.1,1.95])box(g,-37.6,y,50.5,.06,.06,13,steel);
-  const mesh2=new T.MeshStandardMaterial({color:'#9aa3a6',transparent:true,opacity:.3,side:T.DoubleSide,depthWrite:false});const m=mesh(g,new T.PlaneGeometry(13,1.9),mesh2,-37.6,1,50.5);m.rotation.y=Math.PI/2;m.castShadow=false;
+ {const steel='#7d878a';// Fence with a 4 m opening at z = 50 .. 54 for the mechanics' truck.
+  for(const z of [44,46.6,49.2,50,54,55.6,57])beam(g,[-37.6,0,z],[-37.6,2,z],.05,steel);for(const y of [.1,1.95])for(const [a,b2] of [[44,50],[54,57]])box(g,-37.6,y,(a+b2)/2,.06,.06,b2-a,steel);
+  const mesh2=new T.MeshStandardMaterial({color:'#9aa3a6',transparent:true,opacity:.3,side:T.DoubleSide,depthWrite:false});for(const [a,b2] of [[44,50],[54,57]]){const m=mesh(g,new T.PlaneGeometry(b2-a,1.9),mesh2,-37.6,1,(a+b2)/2);m.rotation.y=Math.PI/2;m.castShadow=false;}
   for(let k=0;k<12;k++){const row=k%6,lay=Math.floor(k/6);const b=new T.Group();b.position.set(-38.9-lay*.0,.25+lay*.48,44.4+row*1.1);b.rotation.y=Math.PI/2;g.add(b);
    box(b,0,0,0,1.8,.45,.5,k%2?'#d63a2f':'#f2f1ea');box(b,0,.26,0,1.6,.08,.36,k%2?'#f2f1ea':'#d63a2f');}}
  // Orange spreader frame lying on the ground.
@@ -55374,9 +55375,16 @@ function anchorLights(ship){const k=1/(ship.scale.x||1),b=new T.Box3().setFromOb
  for(let x=-44;x<=-36;x+=2)for(const z of [-8.7,8.7])L(warm,x,20.8,z,1.6);          // bridge windows
  for(const z of [-9,9])L(warm,-40,16,z,6);L(white,x0+3,12,0,3);}
 function yardDetails(root){
- const rs=reachStacker(126,50,false,'#c92d2b');rs.name='Stationary red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=-Math.PI/2;rs.userData.rs.setBoom(4.5,11);rs.userData.rs.carry.removeFromParent();root.add(rs);
- const msc=containerMat('#b8a25c','MSC');const g=new T.Group();g.name='MSC container stacks';root.add(g);
- for(let bay=0;bay<2;bay++)for(let row=0;row<2;row++)for(let tier=0;tier<((bay===4?2:3)-(row===1?1:0));tier++)box(g,119+bay*11,1.55+tier*2.8,35.2+row*3.1,10,2.8,2.65,msc);
+ // Container yard after the Berth 12 CCTV views: one big block of mostly green boxes (a few red-brown and teal ones),
+ // 6 bays x 5 rows, three high in the middle and stepped down at the ends, with the red reach stacker working its east face.
+ const rs=reachStacker(171,41,false,'#c92d2b');rs.name='Stationary red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=0;rs.userData.rs.setBoom(4.5,11);rs.userData.rs.carry.removeFromParent();root.add(rs);
+ const g=new T.Group();g.name='Container yard block';root.add(g);
+ const kinds=[['#2f8f4a','EGSU'],['#3c9c58','EITU'],['#46a86a','EMCU'],['#2a7f43','EGHU'],['#8b3b2c','EGSU'],['#4f9f92','EITU']].map(([c,t])=>containerMat(c,t));
+ let seed=17;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+ for(let bay=0;bay<6;bay++)for(let row=0;row<5;row++){const tiers=(bay===0||bay===5)?(row<2?1:2):(bay===4&&row>2?2:3);
+  for(let tier=0;tier<tiers;tier++){const r=rnd(),k=r<.1?4:r<.16?5:Math.floor(rnd()*4);box(g,103+bay*10.4,1.55+tier*2.8,34.6+row*2.75,10,2.8,2.65,kinds[k]);}}
+ // Yellow-and-black barriers guarding the block's west corner and a line along the yard, as on the photo.
+ for(const z of [33.4,35.6,48.6])concreteBarrier(root,95.8,z,Math.PI/2);for(let k=0;k<6;k++)concreteBarrier(root,104+k*9,52.2,0);
  highMast(root,173,35);
  const car=parkedPassengerCar(root,166,81,'#f0f1ed',0);car.name='Toyota Corolla';car.scale.setScalar(1.4);
  box(car,2.325,.64,0,.035,.45,1.25,'#161d23');
@@ -55472,7 +55480,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const supervisor=berthSupervisor();root.add(supervisor);
  yardDetails(root);barrierLines(root);roadArrow(root);for(let k=0;k<3;k++)flatWagon(root,132+k*20.3,59);dryDockShoreLights(root);const football=miniPitch(root,131,179),buoys=channelBuoys(root);urbanZone(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
  // Two stacks side by side, close to the terminal front.
- flatRackStack(root);flatRackStack(root,-41.6,37.5,1);mechanicsCorner(root);kiaK2700(root,-48.5,51.6,0);const twistlocks=twistlockStation(root);
+ flatRackStack(root);flatRackStack(root,-41.6,37.5,1);mechanicsCorner(root);kiaK2700(root,-45.5,52,0);/* nose towards the fence opening: a clear way out east */const twistlocks=twistlockStation(root);
  const tractors=Array.from({length:6},(_,i)=>{const tractor=terminalTractor(i+1),tr=trailer();root.add(tractor);root.add(tr);return {tractor,trailer:tr,load:tr.userData.load};});
  const tugs=[tugBoat(),tugBoat()];tugs.forEach(t=>{t.scale.setScalar(.85);root.add(t);});
  const towMat=mat('#20262a');const towLines=tugs.map(()=>{const m=new T.Mesh(cyl,towMat);root.add(m);return m;});
