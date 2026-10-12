@@ -55346,7 +55346,8 @@ function barrierLines(root){
  for(const z of [31.3,44.7])for(const x of [67.6,65.4,63.2])concreteBarrier(root,x,z,0);
  // West stacker: a row across its tail, 1.5 m clear of the counterweight, centred on the machine.
  for(const dz of [-3.45,-1.15,1.15,3.45])concreteBarrier(root,11.6,38+dz,Math.PI/2);
- for(let k=0;k<3;k++)concreteBarrier(root,111.2,33.85+k*2.9,Math.PI/2);
+ // Line along the yard side of the main road (z = 31.9), from the truck lane to the loop road, with a gap at each lamp post.
+ for(let x=95;x<=243;x+=2.3){if(((x-103)%18+18)%18<1.7||((x-103)%18+18)%18>16.3)continue;concreteBarrier(root,x,31.9,0);}
 }
 // Yard office in place of the east container stack: glazed on all four sides, one door facing the terminal building
 // (west), two staff in hi-vis vests inside, one at the desk and one watching the yard.
