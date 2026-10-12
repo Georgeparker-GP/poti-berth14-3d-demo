@@ -55376,12 +55376,12 @@ function anchorLights(ship){const k=1/(ship.scale.x||1),b=new T.Box3().setFromOb
  for(const z of [-9,9])L(warm,-40,16,z,6);L(white,x0+3,12,0,3);}
 function yardDetails(root){
  // Container yard after the Berth 12 CCTV views: one big block of mostly green boxes (a few red-brown and teal ones),
- // 6 bays x 3 rows, three high in the middle and stepped down at the ends, with the red reach stacker working its east face.
- const rs=reachStacker(171,41,false,'#c92d2b');rs.name='Stationary red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=0;rs.userData.rs.setBoom(4.5,11);rs.userData.rs.carry.removeFromParent();root.add(rs);
+ // 5 bays x 3 rows (two high on the road side), three high in the middle and stepped down at the ends, with the red reach stacker working its east face.
+ const rs=reachStacker(161,41,false,'#c92d2b');rs.name='Stationary red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=0;rs.userData.rs.setBoom(4.5,11);rs.userData.rs.carry.removeFromParent();root.add(rs);
  const g=new T.Group();g.name='Container yard block';root.add(g);
  const kinds=[['#2f8f4a','EVERGREEN'],['#3c9c58','EVERGREEN'],['#46a86a','EVERGREEN'],['#2a7f43','EVERGREEN'],['#8b3b2c','TRITON'],['#4f9f92','CAI']].map(([c,t])=>containerMat(c,t));
  let seed=17;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
- for(let bay=0;bay<6;bay++)for(let row=0;row<3;row++){const tiers=(bay===0||bay===5)?(row<2?1:2):(bay===4&&row>1?2:3);
+ for(let bay=0;bay<5;bay++)for(let row=0;row<3;row++){const tiers=bay===0?(row<2?1:2):row===0?2:(bay===4&&row>1?2:3);
   for(let tier=0;tier<tiers;tier++){const r=rnd(),k=r<.1?4:r<.16?5:Math.floor(rnd()*4);box(g,103+bay*10.4,1.55+tier*2.8,34.6+row*2.75,10,2.8,2.65,kinds[k]);}}
  // Yellow-and-black barriers guarding the block's west corner, as on the photo.
  for(const z of [33.4,35.6])concreteBarrier(root,95.8,z,Math.PI/2);
