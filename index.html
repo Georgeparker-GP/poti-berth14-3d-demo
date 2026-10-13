@@ -56147,7 +56147,9 @@ const yardRS=(()=>{const Y=model.yard;if(!Y||!Y.rs)return null;const rs=Y.rs,api
  // Working spots: boom south over the block's north row, boom north over the wagons; the turns use half the gap between.
  const ZP=slot(4).z+(HP-4)*K,ZD=RAIL-(HD-4)*K,R=(ZD-ZP)/2;
  // Boom settings: box-centre height y over a spot a horizontal reach H from the pivot.
- const dyFor=y=>y/K-1.95,TRAVEL_Y=4,TRAVEL_H=11,CLEAR=10.2,EMPTY_Y=5.5;
+ // The box hangs with its top 2.15 m below the boom tip (spreader underside, twist-lock pins just entering the castings):
+ // box centre y = (5.3 + dy - 3.8) x K. While travelling the boom stays out far enough to keep the box clear of the machine's nose.
+ const dyFor=y=>y/K-1.5,TRAVEL_Y=4,TRAVEL_H=12.6,CLEAR=10.2,EMPTY_Y=5.5;
  // Jobs: [from, to] with 's<bay>' a stack slot and 'w<i>' a wagon. Load three, then unload them in reverse.
  // Pairs keep every leg at least 2R long sideways.
  const jobs=[['s2','w1'],['s3','w2'],['s4','w0'],['w0','s4'],['w2','s3'],['w1','s2']];
@@ -56184,15 +56186,16 @@ const yardRS=(()=>{const Y=model.yard;if(!Y||!Y.rs)return null;const rs=Y.rs,api
   if(st.k==='go'){const q=legPose(st.leg,st.from,u);x=q[0];z=q[1];face=q[2];
    // Off the stack the box stays high over the neighbours until clear, then comes down; towards the stack it goes up first.
    if(st.loaded){const hi=st.src[0]==='s';const y=hi?lerp(CLEAR,TRAVEL_Y,sm(.35,.7,u)):lerp(TRAVEL_Y,CLEAR,sm(.45,.75,u));dy=dyFor(y);H=lerp(hi?HP:HD,TRAVEL_H,sm(0,.4,u));}
-   else dy=dyFor(EMPTY_Y);}
+   // Empty: high over the stack at the block end of the leg, low elsewhere.
+   else dy=dyFor(st.from.n<0?lerp(CLEAR,EMPTY_Y,sm(.35,.7,u)):lerp(EMPTY_Y,CLEAR,sm(.45,.75,u)));}
   else{const A=st.at,sl=A.n<0,yb=sl?slot(+st.id[1]).y:WY,Hs=sl?HP:HD,ts=st.d*u,above=yb+1.4;x=A.x;z=A.z;face=A.n>0?Math.PI/2:-Math.PI/2;
    const carryY=st.k==='pick'?(sl?CLEAR:TRAVEL_Y):(st.src[0]==='s'?TRAVEL_Y:CLEAR);
-   if(st.k==='pick'){H=lerp(TRAVEL_H,Hs,sm(0,2.5,ts));const y=ts<2.5?lerp(EMPTY_Y,above,sm(0,2.5,ts)):ts<4?lerp(above,yb,sm(2.5,4,ts)):lerp(yb,sl?CLEAR:TRAVEL_Y,sm(4.2,8,ts));dy=dyFor(y);}
-   else{H=lerp(TRAVEL_H,Hs,sm(0,2.5,ts));const y=ts<2.5?lerp(carryY,above,sm(0,2.5,ts)):ts<4.5?lerp(above,yb,sm(2.5,4.4,ts)):lerp(yb,EMPTY_Y,sm(4.8,8,ts));dy=dyFor(y);H=ts>4.8?lerp(Hs,TRAVEL_H,sm(5,9,ts)):H;}}
+   if(st.k==='pick'){H=lerp(TRAVEL_H,Hs,sm(0,2.5,ts));const y=ts<2.5?lerp(sl?CLEAR:EMPTY_Y,above,sm(0,2.5,ts)):ts<4?lerp(above,yb,sm(2.5,4,ts)):lerp(yb,sl?CLEAR:TRAVEL_Y,sm(4.2,8,ts));dy=dyFor(y);}
+   else{H=lerp(TRAVEL_H,Hs,sm(0,2.5,ts));const y=ts<2.5?lerp(carryY,above,sm(0,2.5,ts)):ts<4.5?lerp(above,yb,sm(2.5,4.4,ts)):lerp(yb,sl?CLEAR:EMPTY_Y,sm(4.8,8,ts));dy=dyFor(y);H=ts>4.8?lerp(Hs,TRAVEL_H,sm(5,9,ts)):H;}}
   // Body: rotation.y = atan2(bz, -bx) points its boom (local -x) along the unit direction (bx, bz).
   rs.position.set(x,0,z);rs.rotation.y=face;api.setBoom(dy,H);
   rs.updateMatrixWorld(true);moving.visible=!!carrying;
-  if(carrying){const src=carrying[0]==='s'?slot(+carrying[1]).mesh:onWagon[+carrying[1]];moving.material=src.material;api.carry.getWorldPosition(moving.position);moving.position.y=(5.3+dy-3.35)*K;moving.rotation.y=rs.rotation.y-Math.PI/2;}}};})();
+  if(carrying){const src=carrying[0]==='s'?slot(+carrying[1]).mesh:onWagon[+carrying[1]];moving.material=src.material;api.carry.getWorldPosition(moving.position);moving.position.y=(5.3+dy-3.8)*K;moving.rotation.y=rs.rotation.y-Math.PI/2;}}};})();
 // Crane 0 holds while the mechanic is at its base (PotiOps.craneHeld), about 13 s every 5 minutes.
 // The mechanics' Kia now and then drives to crane 0 (straight out through the 4 m fence opening, a tight left turn once
 // past it, north along x = -48, 2 m clear of the tractors' west lane), the mechanic gets out and works at the crane base, then it backs home.
@@ -56201,7 +56204,11 @@ const kiaRun=(()=>{let kia=null;model.root.traverse(o=>{if(o.userData.kind==='ki
  for(let x=home[0];x<x0;x+=.5)pts.push([x,home[1]]);for(let i=0;i<=12;i++){const a=i/12*Math.PI/2;pts.push([x0+R*Math.sin(a),home[1]+R-R*Math.cos(a)]);}
  for(let z=home[1]+R+.5;z<=zEnd;z+=.5)pts.push([xs,z]);const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));const LEN=cum[cum.length-1];
  const at=d=>{let i=0;while(i<pts.length-2&&d>cum[i+1])i++;const a=pts[i],b=pts[i+1],f=Math.min(1,(d-cum[i])/Math.max(1e-6,cum[i+1]-cum[i]));return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,Math.atan2(-(b[1]-a[1]),b[0]-a[0])];};
- const {pedestrian}=PotiModels.kit,man=pedestrian('#2f5d8a','#2f5d8a','#3b2a20');man.scale.setScalar(.55);man.userData.parts.umbrella.visible=false;man.visible=false;scene.add(man);
+ const {pedestrian,box:kbox,mat:kmat}=PotiModels.kit,man=pedestrian('#2f5d8a','#2f5d8a','#3b2a20');man.scale.setScalar(.55);man.userData.parts.umbrella.visible=false;man.visible=false;scene.add(man);
+ // Hi-vis vest with reflective bands, white hard hat, and a radio in the right hand.
+ kbox(man,0,2.12,0,.56,.86,.84,'#e8f04a');for(const y of [1.86,2.3])kbox(man,0,y,0,.58,.08,.86,'#d9dedf');
+ const hat=new T.Mesh(new T.SphereGeometry(.31,12,8,0,Math.PI*2,0,Math.PI/2),kmat('#f4f4f0'));hat.position.set(0,3.02,0);man.add(hat);kbox(man,.12,3.03,0,.62,.05,.58,'#f4f4f0');
+ kbox(man.userData.parts.arms[1],.1,-1.18,0,.12,.36,.16,'#1d2124');kbox(man.userData.parts.arms[1],.1,-.92,.05,.03,.24,.03,'#1d2124');
  const {cycle:C,out:OUT,drive:DRIVE,stay:STAY,back:BACK,walk:WALK}=PotiOps.KIA;
  return {kia,update(time){const t=((time%C)+C)%C,e=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};let d=0;
   if(t>=OUT&&t<OUT+DRIVE)d=LEN*e((t-OUT)/DRIVE);else if(t>=OUT+DRIVE&&t<OUT+DRIVE+STAY)d=LEN;else if(t>=OUT+DRIVE+STAY&&t<OUT+DRIVE+STAY+BACK)d=LEN*(1-e((t-OUT-DRIVE-STAY)/BACK));
@@ -56212,7 +56219,8 @@ const kiaRun=(()=>{let kia=null;model.root.traverse(o=>{if(o.userData.kind==='ki
   man.position.set(door[0]+(spot[0]-door[0])*f,0,door[1]+(spot[1]-door[1])*f);
   man.rotation.y=walking?(back>0?Math.atan2(-(door[1]-spot[1]),door[0]-spot[0]):Math.atan2(-(spot[1]-door[1]),spot[0]-door[0])):-Math.PI/2+.3;
   const sw=walking?Math.sin(time*7)*.5:0;P.legs.forEach((l,i)=>l.rotation.z=i?sw:-sw);
-  P.arms.forEach((a,i)=>a.rotation.z=walking?(i?-sw*.7:sw*.7):(i?1.3+Math.sin(time*5)*.35:.6));}};})();
+  const talk=!walking&&Math.sin(time*.7)>.3;// Radio hand: low at the hip, raised to the ear while he talks; the other hand points at the crane now and then.
+  P.arms.forEach((a,i)=>{a.rotation.z=walking?(i?-sw*.7:sw*.7):(i?(talk?2.05:.25):(talk?.15:.9+Math.sin(time*1.3)*.25));a.rotation.x=i&&talk?.6:0;});}};})();
 // Street view ("pegman", as on web maps): drag the little yellow man onto the scene, or tap him, to stand there at eye
 // height; drag to look round, walk with the arrow keys / WASD or the on-screen pad, tap the ground to walk there, Esc or
 // the cross to go back to the orbit view. Walls, containers, vehicles, fences and the water's edge stop him: the
