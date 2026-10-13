@@ -55539,7 +55539,9 @@ root.PotiModels={build,setNight,mergeStatic,mergeParts};
  * These are a replay of supplied code, not independently verified operating rules.
  */
 (function(root){'use strict';
-const THR=Object.freeze({barge:10,vessel:17,suspended:21.5,wave:1.5,visVessel:.12,visCranes:.08});
+// Crane stop (18.5) and manoeuvring (15.6) thresholds lowered on trial (cranes stopped for wind on the night of 12-13 Oct while the
+// source wind stayed under 21.5); the on-screen labels still read 21.5 / 17 on purpose.
+const THR=Object.freeze({barge:10,vessel:15.6,suspended:18.5,wave:1.5,visVessel:.12,visCranes:.08});
 function evaluate(w){
  const valid=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
  const windKnown=valid(w.wind)&&valid(w.gust),visKnown=valid(w.vis),waveKnown=valid(w.wave);
