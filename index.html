@@ -55464,7 +55464,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const truckColors=['#eef0f0','#b8302c','#1f4f9c','#e07a1f','#2f7d4a','#5b6672','#d9b32a','#8e44ad','#16a085','#34495e'];
  const truckCount=(root.PotiOps&&root.PotiOps.TRUCK&&root.PotiOps.TRUCK.count)||truckColors.length;
  const trucks=Array.from({length:truckCount},(_,i)=>truckColors[i%truckColors.length]).map(c=>{const truck=roadTruck(c),tr=semiTrailer();root.add(truck);root.add(tr);return {truck,trailer:tr,load:tr.userData.load};});
- label(root,'BERTH 14',8,1,63.1,21,'#294c50');label(root,'BERTH 13',-63,1,66,17,'#294c50');label(root,'BERTH 12',8,1.2,5.1,17,'#294c50');label(root,'B15',77,1.2,98,15,'#294c50');
+ label(root,'BERTH 14',8,1,63.1,21,'#294c50');label(root,'BERTH 13',-64.5,1,26,17,'#294c50');label(root,'BERTH 12',8,1.2,5.1,17,'#294c50');label(root,'B15',77,1.2,98,15,'#294c50');
  const moored=vessel('#3fa9da',1,'maersk');moored.position.set(-8,0,80.1);root.add(moored);
  const moving=bulkVessel(.51);root.add(moving);const dredge=dredger();root.add(dredge);
  // West/south-west breakwater (green line) and the tanker berth south of the land (yellow line).
