@@ -55040,15 +55040,19 @@ function gate1(g,x,z,rot){const G=new T.Group();G.position.set(x,0,z);G.rotation
  box(G,0,9.4,0,.3,1.4,7,'#1d3f63');
  for(const z2 of [7.5,-7.5])box(G,0,6.2,z2,.12,1.6,2.4,'#2f7d4a');
  // Two officers checking the passes beside the inbound lane.
- for(const [ox,oz,turn] of [[1.8,-2.4,-Math.PI/2],[-1.8,-2.4,-Math.PI/2]])officer(G,ox,oz,turn); // 0.45 m clear of a passing truck
+ G.userData.officers=[[1.8,-2.4,-Math.PI/2],[-1.8,-2.4,-Math.PI/2]].map(([ox,oz,turn])=>officer(G,ox,oz,turn)); // 0.45 m clear of a passing truck
  return G;}
 // Simple figure in police uniform: dark blue tunic, cap, reflective vest.
 function officer(g,x,z,rot){const navy='#24314f',skin='#d8b08c';const p=new T.Group();p.position.set(x,0,z);p.rotation.y=rot;g.add(p);
  for(const sd of [-1,1])box(p,0,.75,sd*.22,.36,1.5,.34,'#1b2436');
  box(p,0,2.05,0,.7,1.2,.95,navy);box(p,0,2.15,0,.74,.8,1,'#d8e24a');
- for(const sd of [-1,1])box(p,0,2,sd*.62,.32,1.15,.3,navy);
- mesh(p,new T.SphereGeometry(.28,12,8),mat(skin,0,.7),0,2.95,0);
- box(p,0,3.16,0,.62,.16,.66,navy);box(p,.3,3.1,0,.2,.1,.66,navy);
+ // Arms hang from shoulder pivots (rotation.z > 0 raises them forward); the right hand can hold a truck driver's pass.
+ const arms=[-1,1].map(sd=>{const a=new T.Group();a.position.set(0,2.55,sd*.62);p.add(a);box(a,0,-.55,0,.32,1.15,.3,navy);mesh(a,new T.SphereGeometry(.13,8,6),mat(skin,0,.7),0,-1.15,0);return a;});
+ const pass=box(arms[1],.12,-1.2,-.25,.04,.42,.6,'#f4f2ea');pass.visible=false;
+ const head=new T.Group();head.position.set(0,2.95,0);p.add(head);
+ mesh(head,new T.SphereGeometry(.28,12,8),mat(skin,0,.7),0,0,0);
+ box(head,0,.21,0,.62,.16,.66,navy);box(head,.3,.15,0,.2,.1,.66,navy);
+ p.userData.rig={arms,pass,head,turn:rot};p.traverse(o=>{if(o.isMesh)o.userData.dynamic=true;});
  return p;}
 // Chain-link fence panels: posts, rails and a wire-mesh texture.
 const meshTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const q=c.getContext('2d');q.clearRect(0,0,64,64);q.strokeStyle='rgba(215,220,220,.85)';q.lineWidth=2;
@@ -55389,12 +55393,15 @@ function anchorLights(ship){const k=1/(ship.scale.x||1),b=new T.Box3().setFromOb
 function yardDetails(root){
  // Container yard after the Berth 12 CCTV views: one big block of mostly green boxes (a few red-brown and teal ones),
  // 5 bays x 3 rows (two high on the road side), three high in the middle and stepped down at the ends, with the red reach stacker working its east face.
- const rs=reachStacker(161,41,false,'#c92d2b');rs.name='Stationary red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=0;rs.userData.rs.setBoom(4.5,11);rs.userData.rs.carry.removeFromParent();root.add(rs);
- const g=new T.Group();g.name='Container yard block';root.add(g);
+ const rs=reachStacker(161,41,false,'#c92d2b');rs.name='Red reach stacker';rs.scale.setScalar(.83);rs.rotation.y=0;rs.userData.rs.setBoom(4.5,11);rs.userData.rs.carry.visible=false;root.add(rs);
+ const slots={},g=new T.Group();g.name='Container yard block';root.add(g);
  const kinds=[['#2f8f4a','EVERGREEN'],['#3c9c58','EVERGREEN'],['#46a86a','EVERGREEN'],['#2a7f43','EVERGREEN'],['#8b3b2c','TRITON'],['#4f9f92','CAI']].map(([c,t])=>containerMat(c,t));
  let seed=17;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
  for(let bay=0;bay<5;bay++)for(let row=0;row<3;row++){const tiers=bay===0?[2,3,2][row]:row===0?2:(bay===4&&row>1?2:3);
-  for(let tier=0;tier<tiers;tier++){const r=rnd(),k=r<.1?4:r<.16?5:Math.floor(rnd()*4);box(g,103+bay*10.4,1.55+tier*2.8,34.6+row*2.75,10,2.8,2.65,kinds[k]);}}
+  for(let tier=0;tier<tiers;tier++){const r=rnd(),k=r<.1?4:r<.16?5:Math.floor(rnd()*4),m=box(g,103+bay*10.4,1.55+tier*2.8,34.6+row*2.75,10,2.8,2.65,kinds[k]);
+   // Top boxes of the north row in bays 2-4: the ones the red reach stacker works (kept out of the phone merge).
+   if(row===2&&bay>=2&&tier===tiers-1){m.userData.dynamic=true;slots[bay]={mesh:m,x:m.position.x,y:m.position.y,z:m.position.z};}}}
+ root.userData.yard={rs,slots};
  // Yellow-and-black barriers guarding the block's west corner, as on the photo.
  for(const z of [33.4,35.6])concreteBarrier(root,95.8,z,Math.PI/2);
  highMast(root,173,35);
@@ -55508,7 +55515,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
    if(bb.min.x<X&&bb.max.x>X&&lx>20&&flat){o.scale.x*=(lx-W)/lx;o.position.x+=W/2;}else if(cx<X)o.position.x+=W;
    if(bb.min.z<Z&&bb.max.z>Z&&lz>20&&flat){o.scale.z*=(lz+N)/lz;o.position.z+=N/2;}else if(north)o.position.z+=N;}
   add.forEach(c=>root.add(c));}
- const pk=moored.userData.picks;return {root,twistlocks,cargo:moored.userData.cargo,palms:animatedPalms,walkers,supervisor,dredger:dredge,gate:root.userData.gate,moored,moving,tanker:tk.tanker,cranes,tractors,tugs,towLines,picks:[pk[1],pk[4],pk[5]],stackers,trucks,dockCrew,dredgerModel:dredge,khibula,football,buoys};
+ const pk=moored.userData.picks;return {root,twistlocks,cargo:moored.userData.cargo,palms:animatedPalms,walkers,supervisor,dredger:dredge,gate:root.userData.gate,moored,moving,tanker:tk.tanker,cranes,tractors,tugs,towLines,picks:[pk[1],pk[4],pk[5]],stackers,trucks,dockCrew,dredgerModel:dredge,khibula,football,buoys,yard:root.userData.yard};
 }
 // Merge the static scenery into one mesh per material: cuts several thousand draw calls to a few hundred,
 // which is what lets phones run the animation. Dynamic objects are left untouched.
@@ -55743,7 +55750,8 @@ const TRUCK_ROUTE=makePath((rawLine,rawArc)=>{const h=Math.PI/2,P=Math.PI;let di
  KM.unload=dist+30;line(250,33.5,250,90);arc(240,90,10,0,h);
 });
 const PARKING_S=KM.parking;
-const TRUCK_STOPS=Object.freeze([{s:KM.gate,wait:4.5,name:'gate'},{s:KM.rs,name:'rs',hold:true}]);
+// Gate 1: 7.5 s while an officer takes the driver's pass at the cab window, checks it and hands it back.
+const TRUCK_STOPS=Object.freeze([{s:KM.gate,wait:7.5,name:'gate'},{s:KM.rs,name:'rs',hold:true}]);
 const TRUCK_ZONE=Object.freeze({enter:KM.enter,exit:KM.exit+19});
 const TRUCK_UNLOAD=KM.unload;
 function initialTrucks(){return Array.from({length:TRUCK.count},(_,i)=>({s:mod(PARKING_S-1-i*20,TRUCK_ROUTE.length),wait:0,stop:null,visit:0,loaded:false}));}
@@ -56061,6 +56069,78 @@ function updatePilot(t){const P=PotiOps.PILOT,b=pilotRig.boat;if(!P||!b)return;c
  // Coming in (port ladder) he walks aft; going out (starboard ladder) the same path is run backwards.
  m.position.set(wx,sy+3.6,wz);m.rotation.set(0,sd>0?Math.atan2(-dz,dx):Math.atan2(dz,-dx),0);const sw=Math.sin(d*3.2)*.5;
  legs.forEach((l,i)=>l.rotation.z=i?sw:-sw);arms.forEach((a,i)=>a.rotation.z=i?-sw*.7:sw*.7);}
+// Red reach stacker in the container yard: shuttles the top boxes of the block's north row (bays 4, 3, 2) onto the
+// three flat wagons on the siding (z = 59), then takes them back off again, round and round. It picks with its boom
+// south over the block and places with it north over the wagons; in between it backs out on a tight arc, drives along
+// the yard and turns in on a second arc (both 2 m radius), so the two working spots are 2 x 2 m apart in z.
+// Driven by the crane clock, so it stops whenever the cranes stop.
+const yardRS=(()=>{const Y=model.yard;if(!Y||!Y.rs)return null;const rs=Y.rs,api=rs.userData.rs,K=.83,R=2,ZP=47.4,ZD=ZP+2*R,RAIL=59,WY=3.07;
+ const wagons=[132,152.3,172.6],slot=b=>Y.slots[b];
+ // Loose boxes: one that travels with the spreader, one per wagon (shown when loaded).
+ const proto=slot(4).mesh,mk=()=>{const m=proto.clone();m.userData.dynamic=true;m.visible=false;scene.add(m);return m;};
+ const moving=mk(),onWagon=wagons.map(x=>{const m=mk();m.position.set(x,WY,RAIL);return m;});
+ // Boom settings: box-centre height y over a spot a horizontal reach H from the pivot.
+ const dyFor=y=>y/K-1.95,HP=4+(ZP-slot(4).z)/K,HD=4+(RAIL-ZD)/K,TRAVEL_Y=4,TRAVEL_H=11,CLEAR=10.2,EMPTY_Y=5.5;
+ // Jobs: [from, to] with 's<bay>' a stack slot and 'w<i>' a wagon. Load three, then unload them in reverse.
+ const jobs=[['s4','w1'],['s3','w2'],['s2','w0'],['w0','s2'],['w2','s3'],['w1','s4']];
+ const spot=id=>id[0]==='s'?{x:slot(+id[1]).x,z:ZP,n:-1}:{x:wagons[+id[1]],z:ZD,n:1};
+ // Manoeuvre between a stack spot (boom south) and a wagon spot (boom north) or back: reverse arc, straight, forward arc.
+ const leg=(a,b)=>{const d=-a.n,sg=Math.sign(b.x-a.x)||1,segs=[];
+  const c1=[a.x-sg*R,a.z],L1=Math.PI*R/2,x1=a.x-sg*R,x2=b.x-sg*R,z1=a.z+d*R,c2=[x2,a.z+2*d*R];
+  segs.push({len:L1,rev:true,at:f=>{const th=f*Math.PI/2;return [c1[0]+sg*R*Math.cos(th),c1[1]+d*R*Math.sin(th)];}});
+  segs.push({len:Math.abs(x2-x1),rev:false,at:f=>[x1+(x2-x1)*f,z1]});
+  segs.push({len:L1,rev:false,at:f=>{const th=f*Math.PI/2;return [c2[0]+sg*R*Math.sin(th),c2[1]-d*R*Math.cos(th)];}});
+  const len=segs.reduce((n,q)=>n+q.len,0);return {segs,len,T:6+len/1.8};};
+ // Timeline: per job, pick (9 s), loaded leg, place (9 s), then the empty leg to the next job's source.
+ const steps=[];let T=0;jobs.forEach((j,i)=>{const A=spot(j[0]),B=spot(j[1]),nx=spot(jobs[(i+1)%jobs.length][0]);
+  steps.push({k:'pick',t0:T,d:9,at:A,id:j[0],job:i});T+=9;const l1=leg(A,B);steps.push({k:'go',t0:T,d:l1.T,leg:l1,from:A,loaded:true,src:j[0]});T+=l1.T;
+  steps.push({k:'place',t0:T,d:9,at:B,id:j[1],job:i,src:j[0]});T+=9;const l2=leg(B,nx);steps.push({k:'go',t0:T,d:l2.T,leg:l2,from:B,loaded:false});T+=l2.T;});
+ const CYC=T;
+ // Box state at a time: which slots/wagons hold a box after the jobs finished so far.
+ const sm=(a,b,v)=>{const x=Math.max(0,Math.min(1,(v-a)/(b-a)));return x*x*(3-2*x);},lerp=(a,b,f)=>a+(b-a)*f;
+ function legPose(L,from,u){const ease=u<.5?2*u*u:1-2*(1-u)*(1-u);let d=ease*L.len;for(const q of L.segs){if(d<=q.len||q===L.segs[2]){const f=Math.min(1,d/q.len),p=q.at(f),p2=q.at(Math.min(1,f+.01)),p1=q.at(Math.max(0,f-.01));let dx=p2[0]-p1[0],dz=p2[1]-p1[1];if(q.rev){dx=-dx;dz=-dz;}
+   // Facing = boom direction: forward along the travel direction, backwards while reversing.
+   return [p[0],p[1],Math.atan2(dz,-dx),q.rev];}d-=q.len;}}
+ return {update(clock){const t=((clock%CYC)+CYC)%CYC;let st=steps.find(q=>t>=q.t0&&t<q.t0+q.d)||steps[steps.length-1];const u=(t-st.t0)/st.d;
+  // Which boxes are where: replay the jobs completed before this step (grab at 4 s into a pick, release at 4.5 s into a place).
+  const inSlot={2:true,3:true,4:true},onW=[false,false,false];let carrying=null;
+  for(const q of steps){if(q.t0>t)break;const done=t-q.t0;
+   if(q.k==='pick'&&done>=4){if(q.id[0]==='s')inSlot[q.id[1]]=false;else onW[+q.id[1]]=false;carrying=q.id;}
+   if(q.k==='place'&&done>=4.5){if(q.id[0]==='s')inSlot[q.id[1]]=true;else onW[+q.id[1]]=true;carrying=null;}}
+  [2,3,4].forEach(b=>slot(b).mesh.visible=inSlot[b]);onWagon.forEach((m,i)=>m.visible=onW[i]);
+  // Pose and boom.
+  let x,z,face,dy=dyFor(TRAVEL_Y),H=TRAVEL_H;
+  if(st.k==='go'){const q=legPose(st.leg,st.from,u);x=q[0];z=q[1];face=q[2];
+   // Off the stack the box stays high over the neighbours until clear, then comes down; towards the stack it goes up first.
+   if(st.loaded){const hi=st.src[0]==='s';const y=hi?lerp(CLEAR,TRAVEL_Y,sm(.35,.7,u)):lerp(TRAVEL_Y,CLEAR,sm(.45,.75,u));dy=dyFor(y);H=lerp(hi?HP:HD,TRAVEL_H,sm(0,.4,u));}
+   else dy=dyFor(EMPTY_Y);}
+  else{const A=st.at,sl=A.n<0,yb=sl?slot(+st.id[1]).y:WY,Hs=sl?HP:HD,ts=st.d*u,above=yb+1.4;x=A.x;z=A.z;face=A.n>0?Math.PI/2:-Math.PI/2;
+   const carryY=st.k==='pick'?(sl?CLEAR:TRAVEL_Y):(st.src[0]==='s'?TRAVEL_Y:CLEAR);
+   if(st.k==='pick'){H=lerp(TRAVEL_H,Hs,sm(0,2.5,ts));const y=ts<2.5?lerp(EMPTY_Y,above,sm(0,2.5,ts)):ts<4?lerp(above,yb,sm(2.5,4,ts)):lerp(yb,sl?CLEAR:TRAVEL_Y,sm(4.2,8,ts));dy=dyFor(y);}
+   else{H=lerp(TRAVEL_H,Hs,sm(0,2.5,ts));const y=ts<2.5?lerp(carryY,above,sm(0,2.5,ts)):ts<4.5?lerp(above,yb,sm(2.5,4.4,ts)):lerp(yb,EMPTY_Y,sm(4.8,8,ts));dy=dyFor(y);H=ts>4.8?lerp(Hs,TRAVEL_H,sm(5,9,ts)):H;}}
+  // Body: rotation.y = atan2(bz, -bx) points its boom (local -x) along the unit direction (bx, bz).
+  rs.position.set(x,0,z);rs.rotation.y=face;api.setBoom(dy,H);
+  rs.updateMatrixWorld(true);moving.visible=!!carrying;
+  if(carrying){const src=carrying[0]==='s'?slot(+carrying[1]).mesh:onWagon[+carrying[1]];moving.material=src.material;api.carry.getWorldPosition(moving.position);moving.position.y=(5.3+dy-3.35)*K;moving.rotation.y=rs.rotation.y-Math.PI/2;}}};})();
+// The mechanics' Kia now and then drives to crane 0 (straight out through the 4 m fence opening, a tight left turn once
+// past it, north along x = -48, 2 m clear of the tractors' west lane), the mechanic gets out and works at the crane base, then it backs home.
+const kiaRun=(()=>{let kia=null;model.root.traverse(o=>{if(o.userData.kind==='kia')kia=o;});if(!kia)return null;
+ const home=[kia.position.x,kia.position.z],R=2.5,xs=-48,zEnd=64,x0=xs-R,pts=[];
+ for(let x=home[0];x<x0;x+=.5)pts.push([x,home[1]]);for(let i=0;i<=12;i++){const a=i/12*Math.PI/2;pts.push([x0+R*Math.sin(a),home[1]+R-R*Math.cos(a)]);}
+ for(let z=home[1]+R+.5;z<=zEnd;z+=.5)pts.push([xs,z]);const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));const LEN=cum[cum.length-1];
+ const at=d=>{let i=0;while(i<pts.length-2&&d>cum[i+1])i++;const a=pts[i],b=pts[i+1],f=Math.min(1,(d-cum[i])/Math.max(1e-6,cum[i+1]-cum[i]));return [a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,Math.atan2(-(b[1]-a[1]),b[0]-a[0])];};
+ const {pedestrian}=PotiModels.kit,man=pedestrian('#2f5d8a','#2f5d8a','#3b2a20');man.scale.setScalar(.55);man.userData.parts.umbrella.visible=false;man.visible=false;scene.add(man);
+ const C=300,OUT=200,DRIVE=15,STAY=58,BACK=17;
+ return {kia,update(time){const t=((time%C)+C)%C,e=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};let d=0;
+  if(t>=OUT&&t<OUT+DRIVE)d=LEN*e((t-OUT)/DRIVE);else if(t>=OUT+DRIVE&&t<OUT+DRIVE+STAY)d=LEN;else if(t>=OUT+DRIVE+STAY&&t<OUT+DRIVE+STAY+BACK)d=LEN*(1-e((t-OUT-DRIVE-STAY)/BACK));
+  const q=at(d);kia.position.set(q[0],0,q[1]);kia.rotation.y=q[2];
+  // The mechanic: out of the driver's door, a few steps to the crane's base, working there, back in.
+  const w=t-OUT-DRIVE;man.visible=w>1&&w<STAY-1;if(!man.visible)return;const P=man.userData.parts,door=[xs-1.3,zEnd+1.2],spot=[-48.6,67.6];
+  const go=Math.min(1,Math.max(0,(w-1)/4)),back=Math.min(1,Math.max(0,(w-(STAY-6))/4)),f=go*(1-back),walking=(w>1&&w<5)||(w>STAY-6&&w<STAY-2);
+  man.position.set(door[0]+(spot[0]-door[0])*f,0,door[1]+(spot[1]-door[1])*f);
+  man.rotation.y=walking?(back>0?Math.atan2(-(door[1]-spot[1]),door[0]-spot[0]):Math.atan2(-(spot[1]-door[1]),spot[0]-door[0])):-Math.PI/2+.3;
+  const sw=walking?Math.sin(time*7)*.5:0;P.legs.forEach((l,i)=>l.rotation.z=i?sw:-sw);
+  P.arms.forEach((a,i)=>a.rotation.z=walking?(i?-sw*.7:sw*.7):(i?1.3+Math.sin(time*5)*.35:.6));}};})();
 // Street view ("pegman", as on web maps): drag the little yellow man onto the scene, or tap him, to stand there at eye
 // height; drag to look round, walk with the arrow keys / WASD or the on-screen pad, tap the ground to walk there, Esc or
 // the cross to go back to the orbit view. Walls, containers, vehicles, fences and the water's edge stop him: the
@@ -56176,7 +56256,7 @@ STREET=(()=>{const EYE=3.05,R=.45,WALK=5.5,RUN=11,TURN=1.7,CELL=12,_m=new T.Matr
 
 STREET.collect([model.khibula,model.dockCrew.group,...model.football.group.children.filter(c=>c.userData.kind==='pedestrian'),model.football.ball,...model.buoys.map(b=>b.group),model.twistlocks,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);
 // Phones cannot carry a few thousand draw calls, so the static scenery is merged per material there.
-if(!detailed)try{PotiModels.mergeStatic(model.root,[pilotRig.boat,...(model.root.userData.seedEaters||[]).map(e=>e.p),model.khibula,model.dockCrew.group,model.football.group,...model.buoys.map(b=>b.group),model.twistlocks,...model.palms,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.cranes.map(c=>c.group),...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);for(const [obj,keep] of [[model.moored,Object.values(model.cargo)],[model.moving,[]],...model.tugs.map(t=>[t,[]]),...model.trucks.flatMap(t=>[[t.truck,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]]),...model.tractors.flatMap(t=>[[t.tractor,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]])])PotiModels.mergeStatic(obj,keep,obj);
+if(!detailed)try{PotiModels.mergeStatic(model.root,[pilotRig.boat,...(model.yard?[model.yard.rs]:[]),...(kiaRun?[kiaRun.kia]:[]),...(model.root.userData.seedEaters||[]).map(e=>e.p),model.khibula,model.dockCrew.group,model.football.group,...model.buoys.map(b=>b.group),model.twistlocks,...model.palms,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.cranes.map(c=>c.group),...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);for(const [obj,keep] of [[model.moored,Object.values(model.cargo)],[model.moving,[]],...model.tugs.map(t=>[t,[]]),...model.trucks.flatMap(t=>[[t.truck,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]]),...model.tractors.flatMap(t=>[[t.tractor,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]])])PotiModels.mergeStatic(obj,keep,obj);
  for(const c of model.cranes)PotiModels.mergeParts(c.group,[c.carry]);
  for(const u of model.stackers)PotiModels.mergeParts(u,[u.userData.rs.carry]);}catch(e){console.warn('merge skipped',e);}
 const waterMaterial=new T.ShaderMaterial({fog:true,uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,{uTime:{value:0},uWave:{value:.7},uNight:{value:0},uWind:{value:8},uWindDir:{value:new T.Vector2(1,0)}}]),vertexShader:`uniform float uTime;uniform float uWave;uniform float uWind;uniform vec2 uWindDir;varying vec3 vWorld;varying vec3 vNormal;
@@ -56245,7 +56325,22 @@ function updateGate(dt){const arms=model.gate&&model.gate.userData.arms;if(!arms
  for(const t of motion.trucks||[]){if(t.stop==='gate'&&t.wait>0){if(t.wait<=1.5)open=true;continue;}
   if(t.s>=GS-.5&&t.s<=GS+32)open=true;/* the trailer clears the arm at GS + 29.3 */}
  const target=open?1:0;gateArm+=Math.max(-1,Math.min(1,target-gateArm))*Math.min(1,dt*2.2);
- for(const a of arms)a.rotation.x=-a.userData.dir*gateArm*Math.PI/2;}
+ for(const a of arms)a.rotation.x=-a.userData.dir*gateArm*Math.PI/2;
+ updateOfficers();}
+// The officer nearer the stopped truck's cab turns to the window, reaches up for the pass, reads it held in both hands,
+// hands it back and turns away; the barrier lifts only after that (last 1.5 s of the stop).
+const _o=new T.Vector3(),_c=new T.Vector3();
+function updateOfficers(){const G=model.gate,offs=G&&G.userData.officers;if(!offs)return;const W=PotiOps.TRUCK_STOPS[0].wait;
+ const k=(motion.trucks||[]).findIndex(t=>t.stop==='gate'&&t.wait>0),t=k>=0?motion.trucks[k]:null,u=t?W-t.wait:-1;
+ let who=-1,yaw=0;if(t){const cab=model.trucks[k].truck;cab.getWorldPosition(_c);const f=cab.rotation.y;_c.x+=Math.cos(f)*1.2;_c.z-=Math.sin(f)*1.2;
+  let best=1e9;offs.forEach((o,i)=>{o.getWorldPosition(_o);const d=_o.distanceTo(_c);if(d<best){best=d;who=i;yaw=Math.atan2(-(_c.z-_o.z),_c.x-_o.x)-G.rotation.y;}});}
+ const sm=(a,b,v)=>{const x=Math.max(0,Math.min(1,(v-a)/(b-a)));return x*x*(3-2*x);};
+ offs.forEach((o,i)=>{const R=o.userData.rig;let turn=0,right=0,left=0,nod=0,pass=false;
+  if(i===who){turn=sm(0,1,u)*(1-sm(6.2,7,u));
+   right=2.25*sm(.2,1,u)-1.05*sm(1.6,2.4,u)+1.05*sm(5.2,5.9,u)-2.25*sm(6.1,6.9,u);left=1.2*sm(1.6,2.4,u)*(1-sm(5,5.6,u));
+   pass=u>1.25&&u<6;nod=u>2.4&&u<5.2?Math.sin(u*3)*.08-.12:0;}
+  const d=Math.atan2(Math.sin(yaw-R.turn),Math.cos(yaw-R.turn));o.rotation.y=R.turn+d*turn;
+  R.arms[1].rotation.z=right;R.arms[0].rotation.z=left;R.pass.visible=pass;R.head.rotation.z=nod;});}
 // Berth supervisor: runs the operation from his spot on the apron north-east of the yard office (clear of every vehicle
 // lane). He mostly stands facing the berth and works the radio: talks into it (red LED on transmit, head nodding),
 // listens with it at his ear, points the crane drivers to the next bay, waves a tractor on, shows "wait" and "stop" with
@@ -56345,7 +56440,7 @@ function updateModel(){for(const f of shipFlags){const p=f.geometry.attributes.p
  model.moored.position.y=Math.sin(t*.5)*sea*.07;model.moored.rotation.x=Math.sin(t*.4)*sea*.006;model.moored.rotation.z=Math.sin(t*.46+1)*sea*.004;
  if(model.dredger){const mooredSea=Math.min(sea,.7);model.dredger.position.y=Math.sin(t*.8+.6)*mooredSea*.2;model.dredger.rotation.z=Math.sin(t*.7)*mooredSea*.03;model.dredger.rotation.x=Math.sin(t*.95)*mooredSea*.022;}
  if(model.khibula){const k=model.khibula;k.position.y=Math.sin(t*.55+.8)*Math.min(sea,1.5)*.12;k.rotation.z=Math.sin(t*.5)*Math.min(sea,1.5)*.012;k.rotation.x=Math.sin(t*.62+1)*Math.min(sea,1.5)*.008;}
- if(model.tanker){model.tanker.position.y=Math.sin(t*.45+2)*sea*.05;model.tanker.rotation.z=Math.sin(t*.5+2)*sea*.004;}updateYard();updateWalkers(motion.time);updateGate(simDt);updateTugs(t);moorings.update();if(model.dockCrew)model.dockCrew.update(t);if(model.football)model.football.update(t);updatePilot(t);
+ if(model.tanker){model.tanker.position.y=Math.sin(t*.45+2)*sea*.05;model.tanker.rotation.z=Math.sin(t*.5+2)*sea*.004;}updateYard();updateWalkers(motion.time);updateGate(simDt);updateTugs(t);moorings.update();if(model.dockCrew)model.dockCrew.update(t);if(model.football)model.football.update(t);updatePilot(t);if(yardRS)yardRS.update(motion.craneClock);if(kiaRun)kiaRun.update(motion.time);
  const benchRain=(Number(weather.precip)||0)>0;
  for(const e of model.root.userData.seedEaters||[]){const um=e.p.userData.parts.umbrella;
   // In the rain the one on the right opens an umbrella over both of them (held in the hand on the partner's side, so he
