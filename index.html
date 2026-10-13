@@ -55671,6 +55671,15 @@ function initialTractors(){return Array.from({length:TT.count},(_,i)=>{const s=i
 // Each bay belongs to one crane; take top tiers before lower tiers, quay side first.
 const CARGO_ORDER=[[],[],[]];let CARGO_TOTAL=0;for(let k=3;k>=0;k--)for(let row=4;row>=0;row--)for(let b=0;b<7;b++){const layers=b===6?2:3+(b%3===1?1:0);if(k<layers)CARGO_ORDER[b<2?0:b<5?1:2].push(b+'-'+row+'-'+k);}
 CARGO_TOTAL=CARGO_ORDER.reduce((n,a)=>n+a.length,0);
+// Evening out the cranes: one that has emptied its own bays moves to the nearest bay of a neighbour that still has
+// another bay to work (crane 1 to bay 5 or bay 1, crane 2 to bay 4; crane 0's boom does not reach bay 2's far rows),
+// and that neighbour leaves the bay to it, so two cranes never work the same bay.
+const bayOf=id=>+id.split('-')[0],HELP={1:[5,1],2:[4]},ownerOf=b=>b<2?0:b<5?1:2;
+function helpedBay(h,taken){if(!HELP[h]||CARGO_ORDER[h].some(id=>!taken.includes(id)))return null;
+ for(const b of HELP[h]){const left=CARGO_ORDER[ownerOf(b)].filter(id=>!taken.includes(id));if(left.some(id=>bayOf(id)===b)&&left.some(id=>bayOf(id)!==b))return b;}return null;}
+function workFor(ci,taken){const own=CARGO_ORDER[ci].filter(id=>!taken.includes(id));
+ if(own.length){const lent=[0,1,2].filter(h=>h!==ci).map(h=>helpedBay(h,taken)).filter(b=>b!==null);return own.filter(id=>!lent.includes(bayOf(id)));}
+ const b=helpedBay(ci,taken);return b===null?[]:CARGO_ORDER[ownerOf(b)].filter(id=>!taken.includes(id)&&bayOf(id)===b);}
 // A box for the bypass lane crosses the quay lane on its way; it waits while a tractor's cab is in that strip or is
 // driving towards it, so it never passes over a cab.
 // While it crosses, quay-lane tractors hold at the strip's upstream edge (crossGate), 0.5 m clear of the box.
@@ -55686,7 +55695,7 @@ function craneHeld(ci,time){if(ci!==0)return false;const t=((time%KIA.cycle)+KIA
 function advanceCraneCycles(state,dt){
  const cycles=(state.craneCycles||CRANES.map(()=>({cargo:null,e:0,serial:0}))).map(c=>({...c}));
  cycles.forEach((c,ci)=>{
-  if(!c.cargo){const cargo=CARGO_ORDER[ci].find(id=>!state.cargoTaken.includes(id));if(!cargo)return;c.cargo=cargo;c.e=0;c.serial++;state.cargoTaken.push(cargo);}
+  if(!c.cargo){const cargo=workFor(ci,state.cargoTaken)[0];if(!cargo)return;c.cargo=cargo;c.e=0;c.serial++;state.cargoTaken.push(cargo);}
   const tt=state.tractors.find(t=>t.held&&t.stop==='crane'+ci&&!t.loaded);
   // The box waits at 'ready', over the apron between the quay lane and the crane, never over a lane: it moves over the
   // lane only once its tractor has stopped under it, so no cab ever drives beneath a hanging box.
@@ -55703,7 +55712,7 @@ function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[],craneE=[],t
  // its box over the lane goes first: the tractor stops there instead of driving past to a crane still working the ship.
  const L=TT_ROUTE.length,end=TT_STOPS[0].s,hi=CRANE_SEQ.ready;
  const claimed=new Set(out.filter(t=>!t.loaded&&(t.wait>0||t.bayReserved)).map(t=>t.crane));
- const hasWork=ci=>CARGO_ORDER[ci].some(id=>!taken.includes(id))||craneReady[ci];
+ const hasWork=ci=>workFor(ci,taken).length>0||craneReady[ci];
  const holdsBox=ci=>craneReady[ci]&&craneE[ci]>=hi;
  const empty=out.filter(t=>!t.loaded&&!t.wait&&!t.held).sort((a,b)=>mod(end-a.s,L)-mod(end-b.s,L));
  for(const t of empty){const reach=mod(end-t.s,L),ok=ci=>hasWork(ci)&&mod(TT_STOPS[ci].s-t.s,L)<=reach+.01;
@@ -55712,7 +55721,9 @@ function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[],craneE=[],t
   if(!t.bayReserved||!ok(t.crane)){if(free.length){t.crane=next;t.bayReserved=true;}}
   else if(ready.length&&!holdsBox(t.crane)&&!t.bypass)t.crane=next;
   if(t.bayReserved)claimed.add(t.crane);}
- for(const t of out)if(!t.loaded&&!t.wait&&!craneReady[t.crane]&&!CARGO_ORDER[t.crane].some(id=>!taken.includes(id))){t.bayReserved=false;const ci=CARGO_ORDER.findIndex(a=>a.some(id=>!taken.includes(id)));if(ci>=0)t.crane=ci;}
+ // A tractor standing at a crane that has nothing left to give (its last bay went to the neighbour) drives on.
+ for(const t of out)if(t.held&&!t.loaded&&/^crane\d$/.test(t.stop||'')&&!craneReady[t.crane]&&!workFor(t.crane,taken).length){t.held=false;t.stop=null;t.bayReserved=false;}
+ for(const t of out)if(!t.loaded&&!t.wait&&!craneReady[t.crane]&&!workFor(t.crane,taken).length){t.bayReserved=false;const ci=[0,1,2].find(k=>workFor(k,taken).length>0);if(ci!==undefined)t.crane=ci;}
 
  // Bypass: decided as an empty tractor pulls away from the stacker; cleared once its trailer is back on the loop.
  for(const t of out)if(t.bypass&&!BYPASS.on(t.s)&&mod(t.s-BYPASS.sM1,L)>TT.axle+3&&mod(t.s-BYPASS.sM1,L)<L/2)t.bypass=0;
@@ -55723,7 +55734,7 @@ function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[],craneE=[],t
   const queue=!t.bayReserved&&out.some(o=>o!==t&&!o.bypass&&mod(o.s-t.s,L)<TT_TOP+TT.axle-sR+TT.gap+1);
   const blocked=queue||(t.bayReserved&&[1,2].some(j=>j>t.crane&&up(j)));t.bypass=blocked?(t.rsSlot===undefined?3:t.rsSlot+1):0;}}
  const fpCache=new Map();
- moveAlong(out,dt,TT_ROUTE.length,TT.speed,TT.gap,TT_STOPS,(t,st)=>st.name==='locks'?t.loaded&&!t.unlocked:st.name==='reach'?t.loaded&&t.unlocked:(!t.loaded&&t.crane===st.crane&&!(t.bypass&&st.crane===2)&&(craneReady[st.crane]||CARGO_ORDER[st.crane].some(id=>!taken.includes(id)))),[gate,
+ moveAlong(out,dt,TT_ROUTE.length,TT.speed,TT.gap,TT_STOPS,(t,st)=>st.name==='locks'?t.loaded&&!t.unlocked:st.name==='reach'?t.loaded&&t.unlocked:(!t.loaded&&t.crane===st.crane&&!(t.bypass&&st.crane===2)&&(craneReady[st.crane]||workFor(st.crane,taken).length>0)),[gate,
   // Top of the transfer lane: a truck leaving the west stacker turns east across the tractors' lane, so the crossing
   // is held by whoever enters it first (see crossingByTruck / crossingByTractor).
   {s:TT_STOPS[3].s+.5,open:()=>!trucks.some(crossingByTruck)},
