@@ -54439,6 +54439,22 @@ function terminalBuilding(){const g=new T.Group();g.userData.kind='terminal';g.p
  for(const x of [-10,-5,5,10]){box(g,x,7.5,-5,.7,.35,.65,'#3a4140');box(g,x,7.28,-5,.55,.06,.5,lampHead);glow(g,x,7.25,-5,1.1);const light=new T.SpotLight('#ffd6a0',95,19,.72,.8,1.3);light.position.set(x,7.2,-5.3);const target=new T.Object3D();target.position.set(x,1,-6.5);g.add(target);light.target=target;light.visible=false;g.add(light);gardenLights.push(light);}
  return g;}
 // Reach stacker after the Hyster RS46 photo. Local forward (spreader side) is -x.
+// Counterbalance forklift after the Hyster H155UT photo: yellow body with a black lower chassis and counterweight, open
+// overhead guard on four posts, black two-stage mast at the front with red forks, big tyres. Local forward is +x.
+function forklift(root,x,z,rot){const g=new T.Group();g.name='Hyster forklift';g.position.set(x,0,z);g.rotation.y=rot;root.add(g);
+ const Y='#f2c418',B='#1d2022',tyre='#141719';
+ box(g,-.2,.75,0,3.2,.7,1.85,B);box(g,-.35,1.45,0,2.6,.75,1.75,Y);box(g,-1.55,1.25,0,.7,1.4,1.85,Y);box(g,-1.92,.75,0,.12,.9,1.7,B);
+ for(const sd of [-1,1])box(g,-1.98,1.55,sd*.6,.04,.16,.28,'#c8302a');
+ paintedText(g,'HYSTER',.2,1.45,.9,1.2,.3,0,'#111111');
+ box(g,.25,1.55,0,.7,.35,.9,'#2a2e30');box(g,-.25,1.95,0,.5,.6,.7,'#2a2e30');beam(g,[.3,1.95,0],[.55,2.25,0],.04,'#2a2e30');
+ for(const [px,sd] of [[.75,-1],[.75,1],[-1.3,-1],[-1.3,1]])beam(g,[px,1.8,sd*.8],[px+(px>0?.25:0),3.25,sd*.8],.07,Y);
+ box(g,-.15,3.3,0,2.3,.1,1.75,Y);for(let k=-.9;k<.95;k+=.3)box(g,k,3.36,0,.06,.05,1.7,Y);
+ beam(g,[-1.4,1.9,.7],[-1.4,3.3,.7],.09,'#2a2e30');
+ for(const sd of [-1,1]){box(g,1.15,1.9,sd*.45,.14,3.4,.14,B);box(g,1.25,2.05,sd*.42,.1,3.1,.1,'#3a3f41');}
+ box(g,1.35,.75,0,.12,.9,1.4,B);for(let k=-.6;k<=.6;k+=.3)box(g,1.42,1.35,k,.04,.6,.04,B);
+ for(const sd of [-1,1]){box(g,1.45,.18,sd*.38,.08,.36,.16,'#c62f28');box(g,2.4,.08,sd*.38,1.9,.07,.16,'#c62f28');}
+ for(const [wx,r] of [[.75,.48],[-1.1,.45]])for(const sd of [-1,1]){const w=cylinder(g,wx,r,sd*.85,r,.4,tyre);w.rotation.x=Math.PI/2;const h=cylinder(g,wx,r,sd*1.06,r*.45,.03,'#2b2f31');h.rotation.x=Math.PI/2;}
+ box(g,-1.6,2.6,.7,.12,1.3,.12,'#2b2f31');return g;}
 function reachStacker(x,z,loaded,bodyColor){const g=new T.Group();g.userData.kind='reachstacker';g.position.set(x,0,z);
  const yellow=bodyColor||'#efbf2a',black='#1b1e1f',tire='#151819';
  box(g,-.5,2,0,11,1.7,4.4,yellow);box(g,4.6,3.1,0,3,2.6,4.8,yellow);paintedText(g,bodyColor?'KALMAR':'HYSTER',6.115,3.1,0,4.1,1.35,Math.PI/2,'#111111');box(g,-5.9,1.5,0,.8,1.2,3.4,yellow);box(g,-6.35,1.5,0,.1,.5,2.6,'#2a2d2e');
@@ -54528,7 +54544,7 @@ const lampHead=new T.MeshStandardMaterial({color:'#dfe3e2',emissive:'#ffd58a',em
 const poolTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const q=c.getContext('2d'),gr=q.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,214,140,.85)');gr.addColorStop(.45,'rgba(255,200,120,.35)');gr.addColorStop(1,'rgba(255,190,110,0)');q.fillStyle=gr;q.fillRect(0,0,128,128);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;return t;})();
 const poolMat=new T.MeshBasicMaterial({map:poolTex,transparent:true,depthWrite:false,blending:T.AdditiveBlending});
 const cityWindowMaterial=new T.MeshStandardMaterial({color:'#2a3e48',emissive:'#ffd699',emissiveIntensity:0,roughness:.45});
-const pools=[],glows=[],gardenLights=[];
+const pools=[],glows=[],gardenLights=[],apmSigns=[];
 const glowMat=new T.SpriteMaterial({map:poolTex,transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:.85});
 function glow(g,x,y,z,size=5){const sp=new T.Sprite(glowMat);sp.position.set(x,y,z);sp.scale.setScalar(size);sp.visible=false;g.add(sp);glows.push(sp);return sp;}
 function streetLight(g,x,z,dir,alongX){if((Math.abs(x-85)<.1&&Math.abs(z-27.6)<.1)||(Math.abs(x-247)<.1&&Math.abs(z-27.6)<.1)||(Math.abs(x-256)<.1&&Math.abs(z-7.4)<.1))return;const c='#6f7a7e',ox=alongX?dir:0,oz=alongX?0:dir;cylinder(g,x,.25,z,.45,.5,'#555d60');beam(g,[x,0,z],[x,9,z],.14,c);beam(g,[x,8.8,z],[x+ox*2.4,9.4,z+oz*2.4],.08,c);
@@ -54556,7 +54572,7 @@ function highMast(g,x,z){const c='#8a9296';cylinder(g,x,.3,z,1.3,.6,'#5a6164');
   const body=mesh(f,cube,mat('#2b3033',.4,.5),0,0,0);body.scale.set(.6,.8,1.05);body.rotation.z=-.55;
   const lens=mesh(f,cube,lampHead,.3,-.17,0);lens.scale.set(.05,.62,.85);lens.rotation.z=-.55;lens.castShadow=false;}
  const flood=new T.PointLight('#fff0d2',200,70,1.3);flood.position.set(x,24,z);flood.visible=false;flood.castShadow=false;g.add(flood);gardenLights.push(flood);const p=new T.Mesh(new T.PlaneGeometry(58,58),poolMat);p.rotation.x=-Math.PI/2;p.position.set(x,.22,z);p.visible=false;p.renderOrder=2;g.add(p);pools.push(p);}
-function setNight(on){cityWindowMaterial.color.set(on?'#e2ba78':'#2a3e48');cityWindowMaterial.emissiveIntensity=on?1.1115:0;beaconMat.emissiveIntensity=on?3:.4;lampHead.emissiveIntensity=on?2.223:0;lampHead.color.set(on?'#fff1c9':'#dfe3e2');pools.forEach(p=>{p.visible=on;if(p.material.userData.baseOpacity===undefined)p.material.userData.baseOpacity=p.material.opacity;p.material.opacity=p.material.userData.baseOpacity*.855;});glows.forEach(sp=>{sp.visible=on;if(sp.material.userData.baseOpacity===undefined)sp.material.userData.baseOpacity=sp.material.opacity;sp.material.opacity=sp.material.userData.baseOpacity*.855;});gardenLights.forEach(light=>{if(light.userData.basePower===undefined)light.userData.basePower=light.intensity;light.intensity=light.userData.basePower*.855;light.visible=on;});}
+function setNight(on){apmSigns.forEach(m=>m.emissiveIntensity=on?1.05:.15);cityWindowMaterial.color.set(on?'#e2ba78':'#2a3e48');cityWindowMaterial.emissiveIntensity=on?1.1115:0;beaconMat.emissiveIntensity=on?3:.4;lampHead.emissiveIntensity=on?2.223:0;lampHead.color.set(on?'#fff1c9':'#dfe3e2');pools.forEach(p=>{p.visible=on;if(p.material.userData.baseOpacity===undefined)p.material.userData.baseOpacity=p.material.opacity;p.material.opacity=p.material.userData.baseOpacity*.855;});glows.forEach(sp=>{sp.visible=on;if(sp.material.userData.baseOpacity===undefined)sp.material.userData.baseOpacity=sp.material.opacity;sp.material.opacity=sp.material.userData.baseOpacity*.855;});gardenLights.forEach(light=>{if(light.userData.basePower===undefined)light.userData.basePower=light.intensity;light.intensity=light.userData.basePower*.855;light.visible=on;});}
 // Road tractor after the Scania photo (cab colour varies). Local forward +x, fifth wheel at x = -1.6.
 function roadTruck(color){const g=new T.Group();g.userData.kind='truck';const dark='#22272a',tire='#141719';
  box(g,-.3,1.05,0,7,.45,1.9,'#30363a');
@@ -54772,8 +54788,9 @@ function twistlockStation(root){
 function tankerJetty(root){const g=new T.Group();g.userData.kind='jetty';root.add(g);const deck='#858b83',asph='#4b5254',pipe='#c9a227';
  box(g,152.9,-1.6,-113,217.8,3.2,16,deck); // 10% longer, channel-side head stays fixed.
  // Landfill behind the yacht club. The mole is a detached island (no land link).
- box(g,187.5,-1.6,-20.5,107,3.2,49,deck);
- for(let z=-42;z<3;z+=5)box(g,134.2,-.5,z,.7,1.8,1.4,'#273334');for(let x=138;x<214;x+=5)box(g,x,-.5,-45.2,1.4,1.8,.7,'#273334');
+ // Runs east to x = 262, flush with the land north of it, so the footbridge's south stair stands on ground.
+ box(g,198,-1.6,-20.5,128,3.2,49,deck);
+ for(let z=-42;z<3;z+=5){box(g,134.2,-.5,z,.7,1.8,1.4,'#273334');box(g,262.2,-.5,z,.7,1.8,1.4,'#273334');}for(let x=138;x<260;x+=5)box(g,x,-.5,-45.2,1.4,1.8,.7,'#273334');
  portControl(g);
  // Gate 1 on the diagonal staging road, turned 30 degrees.
  const gateGroup=gate1(g,100,67,-Math.PI/6);root.userData.gate=gateGroup;
@@ -54956,7 +54973,16 @@ function portControl(g){box(g,178,4.5,-18,34,9,20,'#c9a98a');
 const r=mesh(g,new T.CylinderGeometry(11,11,34,24,1,false,0,Math.PI),mat('#b5543c',.1,.7),178,9,-18);r.rotation.z=Math.PI/2;r.scale.set(1,1,.3);revenueSign(g);customsParking(g);
  for(let x=164;x<193;x+=3.2)box(g,x,4,-28.05,1.8,1.2,.08,'#4a3a33');box(g,178,1.6,-28.05,6,3.2,.1,'#3d4447');
  box(g,152,3,-30,22,6,9,'#eef0ee');box(g,152,6.3,-30,23,.6,10,'#b64a36');for(let x=143;x<162;x+=2.2)for(const y of [1.8,4.2])box(g,x,y,-34.55,1.4,1.1,.06,'#2a3e48');
- const tx=205,tz=-30;box(g,tx,15,tz,5,30,5,'#f1f2ef');for(let y=4;y<27;y+=3.5)for(const [ox,oz] of [[0,-2.55],[2.55,0]])box(g,tx+ox,y,tz+oz,oz?3.4:.06,1.2,ox?3.4:.06,'#2a3e48');
+ const tx=205,tz=-30;box(g,tx,15,tz,5,30,5,'#f1f2ef');
+ // APM Terminals lightbox under the control cab on all four faces (the intro's logo, white panel, lit from inside at night).
+ {const src=(document.querySelector('.intro-logo')||{}).src;if(src){const c=document.createElement('canvas');c.width=1024;c.height=300;const q=c.getContext('2d');q.fillStyle='#fff';q.fillRect(0,0,1024,300);
+  const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const im=new Image();im.onload=()=>{// Crop the logo's own white margins, then fill the panel with it.
+   const t=document.createElement('canvas');t.width=im.width;t.height=im.height;const tq=t.getContext('2d');tq.drawImage(im,0,0);const d=tq.getImageData(0,0,t.width,t.height).data;
+   let x0=t.width,y0=t.height,x1=0,y1=0;for(let y=0;y<t.height;y++)for(let x=0;x<t.width;x++){const i=(y*t.width+x)*4;if(d[i+3]>40&&(d[i]<225||d[i+1]<225||d[i+2]<225)){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}}
+   if(x1<=x0){x0=0;y0=0;x1=t.width-1;y1=t.height-1;}const w=x1-x0+1,h=y1-y0+1,k=Math.min(960/w,250/h);q.drawImage(t,x0,y0,w,h,(1024-w*k)/2,(300-h*k)/2,w*k,h*k);tex.needsUpdate=true;};im.src=src;
+  const face=new T.MeshStandardMaterial({map:tex,emissive:'#ffffff',emissiveMap:tex,emissiveIntensity:.15,roughness:.6});face.userData.nightEmissive=1;apmSigns.push(face);
+  for(const [ox,oz,ry] of [[0,-2.56,Math.PI],[2.56,0,Math.PI/2],[0,2.56,0],[-2.56,0,-Math.PI/2]]){box(g,tx+ox*.99,27.6,tz+oz*.99,ox?.14:4.7,1.6,oz?.14:4.7,'#3d4447');
+   const m=mesh(g,new T.PlaneGeometry(4.5,1.32),face,tx+ox*1.04,27.6,tz+oz*1.04);m.rotation.y=ry;m.castShadow=false;}}}for(let y=4;y<27;y+=3.5)for(const [ox,oz] of [[0,-2.55],[2.55,0]])box(g,tx+ox,y,tz+oz,oz?3.4:.06,1.2,ox?3.4:.06,'#2a3e48');
  box(g,tx,31.5,tz,8,3,8,mat('#2c4b57',.5,.2));box(g,tx,33.3,tz,9,.6,9,'#f1f2ef');beam(g,[tx,33.6,tz],[tx,37.6,tz],.09,'#b8c7cb');
  const rotor=new T.Group();rotor.name='Cup anemometer';rotor.position.set(tx,37.7,tz);g.add(rotor);rotor.userData.anemometer=true;
  for(let i=0;i<3;i++){const a=i*Math.PI*2/3,x=Math.cos(a)*1.05,z=Math.sin(a)*1.05;beam(rotor,[0,0,0],[x,0,z],.045,'#a8b6ba');const cup=mesh(rotor,new T.SphereGeometry(.3,12,8,0,Math.PI),mat('#404d54',.5,.45),x,0,z);cup.rotation.y=-a;}
@@ -55209,10 +55235,13 @@ function urbanZone(root){const g=new T.Group();g.userData.kind='urban';root.add(
   for(let y=2.2;y<h-1.4;y+=3.2)for(let k=-1;k<=1;k++){for(const sd of [-1,1]){const lit=(Math.floor(bx+bz+i*7+y*3+k*5+sd*2)%7+7)%7<2;const win=box(g,x+k*w*.3,y,z+sd*(d/2+.04),w*.18,1.3,.08,lit?cityWindowMaterial:'#2a3e48');if(lit)win.name='City night window';}}
  }}
  // Small park with trees, and street trees along the middle avenue.
- box(g,208,.05,166,28,.1,22,'#5f8a4c');
- for(let i=0;i<26;i++){const x=196+rnd()*24,z=156+rnd()*20;cylinder(g,x,1.5,z,.35,3,'#6d5a45');mesh(g,new T.SphereGeometry(1.9+rnd(),9,7),mat('#3c7a3f'),x,4.3,z);}
- for(let z=124;z<210;z+=9){cylinder(g,156,1.4,z,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.7,8,6),mat('#43813f'),156,3.9,z);}
- for(let x=100;x<262;x+=11){cylinder(g,x,1.4,124,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.6,8,6),mat('#43813f'),x,3.9,124);}
+ // Trees keep clear of every carriageway (streets 9 m wide on z = 132/163/194 and x = 112/150/190/232); the park sits
+ // north of the z = 163 street.
+ const onRoad=(x,z,m)=>[132,163,194].some(c=>Math.abs(z-c)<4.5+m)||[112,150,190,232].some(c=>Math.abs(x-c)<4.5+m);
+ box(g,209,.05,172.25,27,.1,9.5,'#5f8a4c');
+ for(let i=0,n=0;i<80&&n<14;i++){const x=196+rnd()*24,z=168+rnd()*9;if(onRoad(x,z,2.2))continue;n++;cylinder(g,x,1.5,z,.35,3,'#6d5a45');mesh(g,new T.SphereGeometry(1.6+rnd()*.6,9,7),mat('#3c7a3f'),x,4.3,z);}
+ for(let z=124;z<210;z+=9){if(onRoad(156,z,1.5))continue;cylinder(g,156,1.4,z,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.7,8,6),mat('#43813f'),156,3.9,z);}
+ for(let x=100;x<262;x+=11){if(onRoad(x,124.1,0))continue;cylinder(g,x,1.4,124,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.6,8,6),mat('#43813f'),x,3.9,124);}
  return g;}
 // The city carried on north to z = 305 (two more rows of blocks, a seafront promenade), with a coast road along its west
 // side (x = 86) on a new 10 m strip, armoured on the sea side by a tetrapod revetment that starts at the north breakwater's
@@ -55255,7 +55284,7 @@ function cityNorth(root){const g=new T.Group();g.name='City (north)';g.userData.
    else box(g,x,h+.35,z,w+.8,.7,d+.8,'#9aa0a0');
    for(let y=2.2;y<h-1.4;y+=3.2)for(let k=-1;k<=1;k++)for(const sd of [-1,1]){const lit=(Math.floor(x+z+y*3+k*5+sd*2)%7+7)%7<2;box(g,x+k*w*.3,y,z+sd*(d/2+.04),w*.18,1.3,.08,lit?cityWindowMaterial:'#2a3e48');}}}
  // Grass and trees between the old city and the first new street.
- box(g,176,.05,218,180,.1,5,'#5f8a4c');for(let x=94;x<266;x+=9){cylinder(g,x,1.4,218,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.6,8,6),mat('#43813f'),x,3.9,218);}
+ box(g,176,.05,218,180,.1,5,'#5f8a4c');for(let x=94;x<266;x+=9){if([112,150,190,232].some(c=>Math.abs(x-c)<6.5))continue;cylinder(g,x,1.4,218,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.6,8,6),mat('#43813f'),x,3.9,218);}
  // Coast road edge: a low parapet wall and a guard rail on the sea side.
  box(g,80.6,.6,237,.6,1.2,138,'#c7c4ba');box(g,81.4,.75,237,.08,.25,138,'#aab2b4');for(let z=169;z<305;z+=3)box(g,81.4,.35,z,.1,.7,.1,'#aab2b4');
  if(typeof mergeStatic==='function')mergeStatic(g,[],g);
@@ -55492,7 +55521,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  // Terminate the siding before the eastern access road; its continuous asphalt ribbon stays clear.
  box(root,233.7,.7,59,.4,1.1,3,'#704439');for(const z of [58,60])box(root,233.4,.95,z,.3,.22,.4,'#e5c9ab');
  // High-mast floodlights (moved with the berths).
- for(const [x,z] of [[239,38],[77,153],[77,76],[35,6.8],[12,31],[-12,31],[-64,64.1],[-62,5.2],[63,26]])highMast(root,x,z);
+ for(const [x,z] of [[239,38],[77,153],[77,76],[35,6.8],[12,31],[-12,31],[-64,64.1],[-62,8.4],[63,26]])highMast(root,x,z); // the Berth 12 mast stands clear of the edge bollards
  // B15: bulk quay jutting north from the land.
  box(root,77,-1.6,96,18,3.2,145,'#858b83');box(root,96,-1.6,140,20,3.2,57,'#858b83');box(root,67.8,.06,119.55,1.8,.12,97.9,'#bcb497');
  for(let z=77;z<165;z+=6){box(root,68.2,-.5,z,.7,1.8,1.4,'#273334');cylinder(root,69.2,.5,z,.27,.8,'#303a3a');}
@@ -55554,7 +55583,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const gottwald=mobileCrane(-15,2.2,{z:8,rot:0,base:'#1668b3',cab:'#8f989b',tower:'#9aa3a6',boom:'#7fb9e0',lattice:['#9fd0ea','#6aa8d6','#8cc3e4'],name:'GOTTWALD',tool:'grab'});
  root.add(gottwald.group);cranes.push(gottwald);
  const supervisor=berthSupervisor();root.add(supervisor);
- yardDetails(root);barrierLines(root);roadArrow(root);for(let k=0;k<3;k++)flatWagon(root,132+k*20.3,59);dryDockShoreLights(root);const football=miniPitch(root,131,179),buoys=channelBuoys(root);urbanZone(root);cityNorth(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
+ yardDetails(root);barrierLines(root);forklift(root,-17.6,43.7,0);/* beside the central stack, forks towards it */roadArrow(root);for(let k=0;k<3;k++)flatWagon(root,132+k*20.3,59);dryDockShoreLights(root);const football=miniPitch(root,131,179),buoys=channelBuoys(root);urbanZone(root);cityNorth(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
  // Two stacks side by side, close to the terminal front.
  flatRackStack(root);flatRackStack(root,-40.6,37.5,1);mechanicsCorner(root);kiaK2700(root,-45.5,52,0);/* nose towards the fence opening: a clear way out east */const twistlocks=twistlockStation(root);
  const tractors=Array.from({length:6},(_,i)=>{const tractor=terminalTractor(i+1),tr=trailer();root.add(tractor);root.add(tr);return {tractor,trailer:tr,load:tr.userData.load};});
@@ -55572,6 +55601,8 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
    if(bb.min.x<X&&bb.max.x>X&&lx>20&&flat){o.scale.x*=(lx-W)/lx;o.position.x+=W/2;}else if(cx<X)o.position.x+=W;
    if(bb.min.z<Z&&bb.max.z>Z&&lz>20&&flat){o.scale.z*=(lz+N)/lz;o.position.z+=N/2;}else if(north)o.position.z+=N;}
   add.forEach(c=>root.add(c));}
+ // Berth 13 (the pier's west face, x = -82.8): rubber fenders on the face and bollards along the edge, like the other berths.
+ for(let z=9;z<66;z+=5){box(root,-83.1,-.5,z,.7,1.8,1.4,'#273334');cylinder(root,-81.4,.5,z,.27,.8,'#303a3a');box(root,-82.1,.06,z,1.4,.12,2,'#bcb497');}
  const pk=moored.userData.picks;return {root,twistlocks,cargo:moored.userData.cargo,palms:animatedPalms,walkers,supervisor,dredger:dredge,gate:root.userData.gate,moored,moving,tanker:tk.tanker,cranes,tractors,tugs,towLines,picks:[pk[1],pk[4],pk[5]],stackers,trucks,dockCrew,dredgerModel:dredge,khibula,football,buoys,yard:root.userData.yard};
 }
 // Merge the static scenery into one mesh per material: cuts several thousand draw calls to a few hundred,
@@ -56359,7 +56390,7 @@ float shoreDist(vec2 q){float d=boxDist(q,vec2(-6.9,40.4),vec2(75.9,36.9));
  d=min(d,boxDist(q,vec2(166.,34.),vec2(96.,30.5)));d=min(d,boxDist(q,vec2(166.,88.),vec2(96.,26.)));
  d=min(d,boxDist(q,vec2(143.,-113.),vec2(99.,8.)));d=min(d,boxDist(q,vec2(77.,96.),vec2(9.,72.5)));d=min(d,boxDist(q,vec2(96.,140.),vec2(10.,28.5)));
  d=min(d,boxDist(q,vec2(90.,-5.25),vec2(10.,8.75)));d=min(d,boxDist(q,vec2(100.,-29.5),vec2(12.,8.4)));
- d=min(d,boxDist(q,vec2(187.,-20.75),vec2(53.5,24.)));d=min(d,boxDist(q,vec2(175.,209.25),vec2(95.,96.25)));return d;}
+ d=min(d,boxDist(q,vec2(198.,-20.5),vec2(64.,24.5)));d=min(d,boxDist(q,vec2(175.,209.25),vec2(95.,96.25)));return d;}
 void main(){vec3 p=position;float t=uTime;
  vec2 q=(modelMatrix*vec4(position.xy,0.,1.)).xz;
  float damp=smoothstep(0.,5.,shoreDist(q));
@@ -56698,7 +56729,7 @@ const PRESENT=(()=>{const bar=document.createElement('div');bar.id='present-bar'
  // CCTV views: camera height and direction after the Berth 12 cameras, wide lens, timestamp overlay.
  const CCTV={'12-1':[1.546,.19,80,120,0,40],'12-2':[-1.457,.38,38,125,0,40],'12-8':[1.31,.45,32,-60,0,52]};
  // Cameras on the high masts (28 m up): [mast x, z, look-at x, z]. Each also gets a small camera body on its mast.
- const MASTCAMS={'m-b14':[-77.8,70.8,5,55],'m-b12':[-75.8,5.2,-25,-8],'m-rs':[12,31,40,40],'m-gate':[63,26,100,55],'m-yard':[239,38,140,40],'m-b15':[77,76,40,62],'m-sea':[-75.8,5.2,-10,-160]};
+ const MASTCAMS={'m-b14':[-77.8,70.8,5,55],'m-b12':[-75.8,8.4,-25,-8],'m-rs':[12,31,40,40],'m-gate':[63,26,100,55],'m-yard':[239,38,140,40],'m-b15':[77,76,40,62],'m-sea':[-75.8,8.4,-10,-160]};
  {const {box}=PotiModels.kit;for(const [k,[mx,mz,tx,tz]] of Object.entries(MASTCAMS)){const a=Math.atan2(-(tz-mz),tx-mx),g=new T.Group();g.name='CCTV '+k;g.position.set(mx+Math.cos(a)*.9,27.6,mz-Math.sin(a)*.9);g.rotation.y=a;scene.add(g);
    box(g,0,.3,0,.3,.5,.3,'#6c7478');box(g,.45,0,0,.75,.3,.32,'#e9ecec');box(g,.6,.2,0,.95,.06,.42,'#d3d8d8');box(g,.84,0,0,.04,.2,.22,'#16222a');
    /* Eye sits on the camera body, 2.2 m out from the mast, so the mast's own lamps stay behind it. */const ex=mx+Math.cos(a)*2.2,ez=mz-Math.sin(a)*2.2,dx=ex-tx,dz=ez-tz,h=Math.hypot(dx,dz),d=Math.hypot(h,27.6);CCTV[k]=[Math.atan2(dx,-dz),Math.asin(27.6/d),d,tx,0,tz];}}
