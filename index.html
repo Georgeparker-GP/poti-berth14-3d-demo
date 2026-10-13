@@ -54569,7 +54569,7 @@ function highMast(g,x,z){const c='#8a9296';cylinder(g,x,.3,z,1.3,.6,'#5a6164');
  for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.3,cx=Math.cos(a),cz=Math.sin(a),up=i%2?.9:0;
   beam(g,[x,31.2+up*.5,z],[x+cx*2.3,31.2+up,z+cz*2.3],.05,'#5d6568');
   const f=new T.Group();f.position.set(x+cx*2.6,31.4+up,z+cz*2.6);f.rotation.y=-a;g.add(f);
-  const body=mesh(f,cube,mat('#2b3033',.4,.5),0,0,0);body.scale.set(.6,.8,1.05);body.rotation.z=-.55;
+  const body=mesh(f,cube,mat('#2b3033',.4,.5),0,0,0);body.scale.set(.6,.8,1.05);body.rotation.z=-.55;body.castShadow=false; // 31 m up its shadow would land detached from the thin pole's
   const lens=mesh(f,cube,lampHead,.3,-.17,0);lens.scale.set(.05,.62,.85);lens.rotation.z=-.55;lens.castShadow=false;}
  const flood=new T.PointLight('#fff0d2',200,70,1.3);flood.position.set(x,24,z);flood.visible=false;flood.castShadow=false;g.add(flood);gardenLights.push(flood);const p=new T.Mesh(new T.PlaneGeometry(58,58),poolMat);p.rotation.x=-Math.PI/2;p.position.set(x,.22,z);p.visible=false;p.renderOrder=2;g.add(p);pools.push(p);}
 function setNight(on){apmSigns.forEach(m=>m.emissiveIntensity=on?1.05:.15);cityWindowMaterial.color.set(on?'#e2ba78':'#2a3e48');cityWindowMaterial.emissiveIntensity=on?1.1115:0;beaconMat.emissiveIntensity=on?3:.4;lampHead.emissiveIntensity=on?2.223:0;lampHead.color.set(on?'#fff1c9':'#dfe3e2');pools.forEach(p=>{p.visible=on;if(p.material.userData.baseOpacity===undefined)p.material.userData.baseOpacity=p.material.opacity;p.material.opacity=p.material.userData.baseOpacity*.855;});glows.forEach(sp=>{sp.visible=on;if(sp.material.userData.baseOpacity===undefined)sp.material.userData.baseOpacity=sp.material.opacity;sp.material.opacity=sp.material.userData.baseOpacity*.855;});gardenLights.forEach(light=>{if(light.userData.basePower===undefined)light.userData.basePower=light.intensity;light.intensity=light.userData.basePower*.855;light.visible=on;});}
@@ -54974,14 +54974,14 @@ const r=mesh(g,new T.CylinderGeometry(11,11,34,24,1,false,0,Math.PI),mat('#b5543
  for(let x=164;x<193;x+=3.2)box(g,x,4,-28.05,1.8,1.2,.08,'#4a3a33');box(g,178,1.6,-28.05,6,3.2,.1,'#3d4447');
  box(g,152,3,-30,22,6,9,'#eef0ee');box(g,152,6.3,-30,23,.6,10,'#b64a36');for(let x=143;x<162;x+=2.2)for(const y of [1.8,4.2])box(g,x,y,-34.55,1.4,1.1,.06,'#2a3e48');
  const tx=205,tz=-30;box(g,tx,15,tz,5,30,5,'#f1f2ef');
- // APM Terminals lightbox under the control cab on all four faces (the intro's logo, white panel, lit from inside at night).
+ // APM Terminals lightbox under the control cab on the south face (the intro's logo, white panel, lit from inside at night).
  {const src=(document.querySelector('.intro-logo')||{}).src;if(src){const c=document.createElement('canvas');c.width=1024;c.height=300;const q=c.getContext('2d');q.fillStyle='#fff';q.fillRect(0,0,1024,300);
   const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;const im=new Image();im.onload=()=>{// Crop the logo's own white margins, then fill the panel with it.
    const t=document.createElement('canvas');t.width=im.width;t.height=im.height;const tq=t.getContext('2d');tq.drawImage(im,0,0);const d=tq.getImageData(0,0,t.width,t.height).data;
    let x0=t.width,y0=t.height,x1=0,y1=0;for(let y=0;y<t.height;y++)for(let x=0;x<t.width;x++){const i=(y*t.width+x)*4;if(d[i+3]>40&&(d[i]<225||d[i+1]<225||d[i+2]<225)){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}}
    if(x1<=x0){x0=0;y0=0;x1=t.width-1;y1=t.height-1;}const w=x1-x0+1,h=y1-y0+1,k=Math.min(960/w,250/h);q.drawImage(t,x0,y0,w,h,(1024-w*k)/2,(300-h*k)/2,w*k,h*k);tex.needsUpdate=true;};im.src=src;
   const face=new T.MeshStandardMaterial({map:tex,emissive:'#ffffff',emissiveMap:tex,emissiveIntensity:.15,roughness:.6});face.userData.nightEmissive=1;apmSigns.push(face);
-  for(const [ox,oz,ry] of [[0,-2.56,Math.PI],[2.56,0,Math.PI/2],[0,2.56,0],[-2.56,0,-Math.PI/2]]){box(g,tx+ox*.99,27.6,tz+oz*.99,ox?.14:4.7,1.6,oz?.14:4.7,'#3d4447');
+  for(const [ox,oz,ry] of [[0,-2.56,Math.PI]]){box(g,tx+ox*.99,27.6,tz+oz*.99,ox?.14:4.7,1.6,oz?.14:4.7,'#3d4447');
    const m=mesh(g,new T.PlaneGeometry(4.5,1.32),face,tx+ox*1.04,27.6,tz+oz*1.04);m.rotation.y=ry;m.castShadow=false;}}}for(let y=4;y<27;y+=3.5)for(const [ox,oz] of [[0,-2.55],[2.55,0]])box(g,tx+ox,y,tz+oz,oz?3.4:.06,1.2,ox?3.4:.06,'#2a3e48');
  box(g,tx,31.5,tz,8,3,8,mat('#2c4b57',.5,.2));box(g,tx,33.3,tz,9,.6,9,'#f1f2ef');beam(g,[tx,33.6,tz],[tx,37.6,tz],.09,'#b8c7cb');
  const rotor=new T.Group();rotor.name='Cup anemometer';rotor.position.set(tx,37.7,tz);g.add(rotor);rotor.userData.anemometer=true;
