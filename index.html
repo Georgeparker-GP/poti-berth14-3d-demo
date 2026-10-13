@@ -55410,7 +55410,7 @@ function yardDetails(root){
  for(const z of [-.5,.5]){beam(person,[0,2.42,z],[.5,2.1,z],.22,'#4b7182');beam(person,[.5,2.1,z],[.82,2.73,z*.6],.19,'#4b7182');mesh(person,new T.SphereGeometry(.13,8,6),skin,.82,2.73,z*.6);}
  box(person,.92,2.8,0,.22,.38,.65,'#1d2529');const lens=mesh(person,new T.CylinderGeometry(.13,.13,.17,12),mat('#1c3947',.4,.2),1.09,2.8,0);lens.rotation.z=Math.PI/2;
 }
-function build(){const root=new T.Group();root.name='Poti reference model';const Q=69.3;
+function build(){const root=new T.Group();root.name='Poti reference model';const Q=69.3,PIER=(window.PotiOps&&PotiOps.PIER)||{west:-13.8,north:6.7};
  box(root,0,-1.6,37.05,138,3.2,67.1,'#858b83');
  box(root,165.25,-1.6,34,193.5,3.2,61,'#858b83'); // east edge at x = 262, flush with the land north of it
  // Road: inbound z 9..20 (heading west), outbound z 20..31.
@@ -55431,7 +55431,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  for(const [x,z] of [[239,38],[77,153],[77,76],[35,6.8],[12,31],[-12,31],[-64,64.1],[-62,5.2],[63,26]])highMast(root,x,z);
  // B15: bulk quay jutting north from the land.
  box(root,77,-1.6,96,18,3.2,145,'#858b83');box(root,96,-1.6,140,20,3.2,57,'#858b83');box(root,67.8,.06,119.55,1.8,.12,97.9,'#bcb497');
- for(let z=71;z<165;z+=6){box(root,68.2,-.5,z,.7,1.8,1.4,'#273334');cylinder(root,69.2,.5,z,.27,.8,'#303a3a');}
+ for(let z=77;z<165;z+=6){box(root,68.2,-.5,z,.7,1.8,1.4,'#273334');cylinder(root,69.2,.5,z,.27,.8,'#303a3a');}
  const feeder=conveyorFeeder();feeder.position.set(78,0,116);feeder.rotation.y=Math.PI;root.add(feeder);
  // Berth 14 edge (north): crane rail strip, fenders, bollards.
  box(root,0,.06,Q,138,.12,1.8,'#bcb497');
@@ -55465,7 +55465,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const truckCount=(root.PotiOps&&root.PotiOps.TRUCK&&root.PotiOps.TRUCK.count)||truckColors.length;
  const trucks=Array.from({length:truckCount},(_,i)=>truckColors[i%truckColors.length]).map(c=>{const truck=roadTruck(c),tr=semiTrailer();root.add(truck);root.add(tr);return {truck,trailer:tr,load:tr.userData.load};});
  label(root,'BERTH 14',8,1,63.1,21,'#294c50');label(root,'BERTH 13',-64.5,1,26,17,'#294c50');label(root,'BERTH 12',8,1.2,5.1,17,'#294c50');label(root,'B15',77,1.2,98,15,'#294c50');
- const moored=vessel('#3fa9da',1,'maersk');moored.position.set(-8,0,80.1);root.add(moored);
+ const moored=vessel('#3fa9da',1,'maersk');moored.position.set(-8,0,80.1+PIER.north);root.add(moored);
  const moving=bulkVessel(.51);root.add(moving);const dredge=dredger();root.add(dredge);
  // West/south-west breakwater (green line) and the tanker berth south of the land (yellow line).
  // Both arms are cut from one sampled arc, so they meet at (-146,142) with the same tangent and no visible joint.
@@ -55485,7 +55485,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  kiosk(root,65,8,0);yardOffice(root,2.5,43.75);
  label(root,'GATE 1',100,11,67,16,'#294c50');label(root,'YACHT CLUB',141,9.5,-14,16,'#294c50');
  const tk=tankerJetty(root);label(root,'TANKER BERTH',170,1.5,-92,20,'#294c50');
- const cranes=[-33,-8,24].map((x,i)=>{const c=mobileCrane(x,i*1.4);c.apply(c.poseFor([-24,1,33][i],59.1,30));root.add(c.group);return c;});
+ const cranes=[-33+PIER.west,-8,24].map((x,i)=>{const c=mobileCrane(x,i*1.4,{z:66.1+PIER.north});c.apply(c.poseFor([-24+PIER.west,1,33][i],59.1,30));root.add(c.group);return c;});
  // Berth 12: a Gottwald mobile harbour crane in Konecranes colours, with the same boom floodlights.
  const gottwald=mobileCrane(-15,2.2,{z:8,rot:0,base:'#1668b3',cab:'#8f989b',tower:'#9aa3a6',boom:'#7fb9e0',lattice:['#9fd0ea','#6aa8d6','#8cc3e4'],name:'GOTTWALD',tool:'grab'});
  root.add(gottwald.group);cranes.push(gottwald);
@@ -55496,6 +55496,18 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const tractors=Array.from({length:6},(_,i)=>{const tractor=terminalTractor(i+1),tr=trailer();root.add(tractor);root.add(tr);return {tractor,trailer:tr,load:tr.userData.load};});
  const tugs=[tugBoat(),tugBoat()];tugs.forEach(t=>{t.scale.setScalar(.85);root.add(t);});
  const towMat=mat('#20262a');const towLines=tugs.map(()=>{const m=new T.Mesh(cyl,towMat);root.add(m);return m;});
+ // The pier is 10 % longer and wider than first drawn: it grew west (crane 0 and everything west of x = -25 moved
+ // PIER.west) and north (the Berth 14 edge, its cranes and ship moved PIER.north). Static pieces are moved by region here;
+ // long ones (slab, rail strip, lane lines) that cross the cut are stretched, and the fender and bollard rows refilled.
+ {const W=PIER.west,N=PIER.north,X=-25,Z=62.5,skip=new Set([moored,moving,...cranes.map(c=>c.group)]),bb=new T.Box3(),add=[];
+  for(const o of [...root.children]){if(skip.has(o))continue;bb.setFromObject(o);if(bb.isEmpty())continue;
+   const cx=(bb.min.x+bb.max.x)/2,cz=(bb.min.z+bb.max.z)/2,lx=bb.max.x-bb.min.x,lz=bb.max.z-bb.min.z,flat=o.isMesh&&Math.abs(o.rotation.y)<1e-6;
+   if(cx<-70.5||cx>69.5||cz<2.4||cz>72)continue;
+   const row=Math.max(lx,lz)<2.5&&(cz<6||cz>66)&&cx>=X+W&&cx<X,north=!(bb.min.z<Z&&bb.max.z>Z&&lz>20&&flat)&&cz>Z;
+   if(row){const c=o.clone();if(north)c.position.z+=N;add.push(c);}
+   if(bb.min.x<X&&bb.max.x>X&&lx>20&&flat){o.scale.x*=(lx-W)/lx;o.position.x+=W/2;}else if(cx<X)o.position.x+=W;
+   if(bb.min.z<Z&&bb.max.z>Z&&lz>20&&flat){o.scale.z*=(lz+N)/lz;o.position.z+=N/2;}else if(north)o.position.z+=N;}
+  add.forEach(c=>root.add(c));}
  const pk=moored.userData.picks;return {root,twistlocks,cargo:moored.userData.cargo,palms:animatedPalms,walkers,supervisor,dredger:dredge,gate:root.userData.gate,moored,moving,tanker:tk.tanker,cranes,tractors,tugs,towLines,picks:[pk[1],pk[4],pk[5]],stackers,trucks,dockCrew,dredgerModel:dredge,khibula,football,buoys};
 }
 // Merge the static scenery into one mesh per material: cuts several thousand draw calls to a few hundred,
@@ -55612,27 +55624,29 @@ function dredgerPosition(){return [63,-1.4,Math.PI];}
 const TT=Object.freeze({speed:8.332,gap:19,count:6,kingpin:2.1,trailerCenter:7.3,axle:10.6});
 // Driven anticlockwise as in reality: west on the quay lane (z = 59.1), south on x = -30, east on the back lane (z = 22),
 // north through the transfer lane (x = 40), same direction as the road trucks.
-const TT_ROUTE=makePath((line,arc)=>{const h=Math.PI/2,P=Math.PI;arc(-27,56.1,3,-3*h,-P);line(-30,56.1,-30,25);arc(-27,25,3,-P,-h);line(-27,22,37,22);arc(37,25,3,-h,0);line(40,25,40,56.1);arc(37,56.1,3,0,h);line(37,59.1,-27,59.1);});
-const TT_SIDE=31.1,TT_TOP=4*1.5*Math.PI+TT_SIDE+64+TT_SIDE,TT_UP=3*1.5*Math.PI+TT_SIDE+64;
+// The pier was lengthened 10 % at its west end: crane 0 and everything west of x = -25 (west lane included) moved WEST_X.
+const WEST_X=-13.8,XW=-27+WEST_X,TT_RUN=37-XW;
+const TT_ROUTE=makePath((line,arc)=>{const h=Math.PI/2,P=Math.PI;arc(XW,56.1,3,-3*h,-P);line(XW-3,56.1,XW-3,25);arc(XW,25,3,-P,-h);line(XW,22,37,22);arc(37,25,3,-h,0);line(40,25,40,56.1);arc(37,56.1,3,0,h);line(37,59.1,XW,59.1);});
+const TT_SIDE=31.1,TT_TOP=4*1.5*Math.PI+TT_SIDE+TT_RUN+TT_SIDE,TT_UP=3*1.5*Math.PI+TT_SIDE+TT_RUN;
 // Crane handling sequence (seconds after the tractor stops). Poses: 'ship'/'tt', high = lifted clear.
 // Crane timeline units per second (.5712 slowed by 7 %, 10 %, 13 % and 5 %, 3 % faster, then 3 % and 3 % slower).
 const CRANE_RATE=.40215;
 const CRANE_SEQ=Object.freeze({keys:[[0,'start'],[3.5,'shipHigh'],[6,'shipLow'],[6.5,'shipLow'],[8.5,'shipHigh'],[11,'clear'],[12.8,'ready'],[13.5,'ttHigh'],[16,'ttLow'],[16.5,'ttLow'],[18.5,'ttHigh']],ready:12.8,grab:6.3,release:16.3,total:18.5});
 // Crane positions (x) and where each crane puts the box: trailer centre x on the quay-side lane.
-const CRANES=Object.freeze([{x:-33,drop:-19.5},{x:-8,drop:1},{x:24,drop:33}]);
+const CRANES=Object.freeze([{x:-33+WEST_X,drop:-19.5+WEST_X},{x:-8,drop:1},{x:24,drop:33}]);
 // Two reach stackers face each other across the transfer lane x = 40. A loaded tractor or an empty road truck
 // enters the lane only when it is free and a stacker can serve it (an empty one for a tractor, a loaded one for a truck).
 // Stacker timings: animation seconds / 1.4766, then 5 % quicker (x 1.05).
 const RS_PACE=1.4766*1.05;
 const RS=Object.freeze({pick:5.5/RS_PACE,grab:2.5/RS_PACE,place:6.5/RS_PACE,release:3.1/RS_PACE,lane:40,z:38,units:[{x:20,rot:Math.PI},{x:60,rot:0}],reachOut:18,reachIn:13});
 const TT_ZONE=Object.freeze({enter:TT_UP-1.5*Math.PI-13,exit:TT_TOP+1+13.3+19});
-const TT_STOPS=Object.freeze([...CRANES.map((c,i)=>({s:mod(TT_TOP+37-c.drop+TT.trailerCenter,TT_ROUTE.length),hold:true,name:'crane'+i,crane:i})),{s:TT_UP+13+TT.trailerCenter,name:'reach',hold:true},{s:3*Math.PI+TT_SIDE+18.3,wait:7/1.656,name:'locks'}]);
+const TT_STOPS=Object.freeze([...CRANES.map((c,i)=>({s:mod(TT_TOP+37-c.drop+TT.trailerCenter,TT_ROUTE.length),hold:true,name:'crane'+i,crane:i})),{s:TT_UP+13+TT.trailerCenter,name:'reach',hold:true},{s:3*Math.PI+TT_SIDE+18.3-WEST_X,wait:7/1.656,name:'locks'}]);
 // Generic queueing mover: keeps a gap to the vehicle ahead, stops where wants(t,stop) says so.
 function moveAlong(list,dt,L,speed,gap,stops,wants,gate,clearance){
  for(const t of list){if(t.zoneEnd!==undefined&&mod(t.s-t.zoneEnd,L)<L/2){delete t.rsSlot;delete t.zoneEnd;delete t.mergeAt;t.parallel=false;}if(t.held)continue;if(t.wait>0){t.wait=Math.max(0,t.wait-dt);if(t.wait===0)t.done=t.stop;continue;}
   const followingGap=gap===19?(t.s>=TT_TOP&&t.s<=TT_STOPS[0].s+2?19:22):gap;let ahead=Infinity;for(const o of list)if(o!==t){if(t.parallel&&o.parallel&&t.rsSlot!==o.rsSlot&&t.rsSlot!==undefined&&o.rsSlot!==undefined)continue;
    // Quay lane and bypass lane run side by side: tractors in the other lane there are not queued behind (footprints still checked).
-   if(gap===TT.gap&&!t.bypass!==!o.bypass){const b=t.bypass?t:o,m=t.bypass?o:t;if(m.s>=TT_TOP-1&&BYPASS.on(b.s)&&mod(b.s-BYPASS.sR,L)<=mod(L-BYPASS.sR,L))continue;}const d=mod(o.s-t.s,L);if(d>1e-6)ahead=Math.min(ahead,d);else if(list.indexOf(o)<list.indexOf(t))ahead=0;}
+   if(gap===TT.gap&&!t.bypass!==!o.bypass){const b=t.bypass?t:o,m=t.bypass?o:t;if(m.s>=TT_TOP-1&&BYPASS.lane(b.s))continue;}const d=mod(o.s-t.s,L);if(d>1e-6)ahead=Math.min(ahead,d);else if(list.indexOf(o)<list.indexOf(t))ahead=0;}
   let move=Math.min(speed*dt,Math.max(0,ahead-followingGap));if(t.mergeAt!==undefined){const d=mod(t.mergeAt-t.s,L);if(d<move&&list.some(o=>o!==t&&o.rsSlot!==t.rsSlot&&(mod(o.s-t.mergeAt,L)<followingGap+3||(Math.abs(o.s-t.s)<.05&&!o.held&&!(o.wait>0)&&(o.loadSeq&&t.loadSeq?o.loadSeq<t.loadSeq:list.indexOf(o)<list.indexOf(t)))))){move=Math.max(0,d-.01);}}
   for(const gt of (gate?(Array.isArray(gate)?gate:[gate]):[])){const d=mod(gt.s-t.s,L);if(d>1e-6&&d<=move){if(!gt.open(t))move=Math.max(0,d-.01);else gt.entered&&gt.entered(t);}}
   if(clearance&&move>0&&!clearance(t,mod(t.s+move,L))){let lo=0,hi=move;for(let i=0;i<8;i++){const m=(lo+hi)/2;if(clearance(t,mod(t.s+m,L)))lo=m;else hi=m;}move=Math.max(0,lo-.02);}
@@ -55647,9 +55661,9 @@ CARGO_TOTAL=CARGO_ORDER.reduce((n,a)=>n+a.length,0);
 // A box for the bypass lane crosses the quay lane on its way; it waits while a tractor's cab is in that strip or is
 // driving towards it, so it never passes over a cab.
 // While it crosses, quay-lane tractors hold at the strip's upstream edge (crossGate), 0.5 m clear of the box.
-const crossX=ci=>ci===0?BYPASS.drop0-2.25:CRANES[ci].drop;
+const crossX=ci=>CRANES[ci].drop;
 const crossGate=ci=>TT_STOPS[ci].s+(CRANES[ci].drop-TT.trailerCenter)-(crossX(ci)+8.6);
-function crossingClear(ci,tt,list){if(!tt.bypass)return true;const x=crossX(ci);
+function crossingClear(ci,tt,list){if(!tt.bypass||!BYPASS.lane(tt.s))return true;const x=crossX(ci);
  return !list.some(o=>{if(o===tt)return false;const q=tractorPosition(o.s,o.rsSlot,o.bypass);if(q[1]<56.5)return false;
   const cx=q[0]+Math.cos(q[2])*1.95;return cx>x-6.65&&cx<x+6.65;});}
 function advanceCraneCycles(state,dt){
@@ -55682,7 +55696,7 @@ function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[],craneE=[],t
  for(const t of out)if(!t.loaded&&!t.wait&&!craneReady[t.crane]&&!CARGO_ORDER[t.crane].some(id=>!taken.includes(id))){t.bayReserved=false;const ci=CARGO_ORDER.findIndex(a=>a.some(id=>!taken.includes(id)));if(ci>=0)t.crane=ci;}
 
  // Bypass: decided as an empty tractor pulls away from the stacker; cleared once its trailer is back on the loop.
- for(const t of out)if(t.bypass&&!BYPASS.on(t.s)&&mod(t.s-BYPASS.sJ,L)>TT.axle+3&&mod(t.s-BYPASS.sJ,L)<L/2)t.bypass=0;
+ for(const t of out)if(t.bypass&&!BYPASS.on(t.s)&&mod(t.s-BYPASS.sM1,L)>TT.axle+3&&mod(t.s-BYPASS.sM1,L)<L/2)t.bypass=0;
  {const sR=TT_STOPS[3].s;for(const t of out){if(Math.abs(t.s-sR)>.05||t.held||t.wait)continue;
   if(t.loaded||(t.bayReserved&&t.crane===2)){t.bypass=0;continue;}
   const up=j=>out.some(o=>o!==t&&((o.held&&o.stop==='crane'+j)||(o.crane===j&&o.bayReserved&&!o.loaded&&mod(TT_STOPS[j].s-o.s,L)<mod(TT_STOPS[j].s-sR,L))));
@@ -55690,7 +55704,7 @@ function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[],craneE=[],t
   const queue=!t.bayReserved&&out.some(o=>o!==t&&!o.bypass&&mod(o.s-t.s,L)<TT_TOP+TT.axle-sR+TT.gap+1);
   const blocked=queue||(t.bayReserved&&[1,2].some(j=>j>t.crane&&up(j)));t.bypass=blocked?(t.rsSlot===undefined?3:t.rsSlot+1):0;}}
  const fpCache=new Map();
- moveAlong(out,dt,TT_ROUTE.length,TT.speed,TT.gap,[...TT_STOPS,BYPASS.stop0],(t,st)=>st.name==='locks'?t.loaded&&!t.unlocked:st.name==='reach'?t.loaded&&t.unlocked:(!t.loaded&&t.crane===st.crane&&!(t.bypass&&st.crane===2)&&!!st.byp===!!(t.bypass&&st.crane===0)&&(craneReady[st.crane]||CARGO_ORDER[st.crane].some(id=>!taken.includes(id)))),[gate,
+ moveAlong(out,dt,TT_ROUTE.length,TT.speed,TT.gap,TT_STOPS,(t,st)=>st.name==='locks'?t.loaded&&!t.unlocked:st.name==='reach'?t.loaded&&t.unlocked:(!t.loaded&&t.crane===st.crane&&!(t.bypass&&st.crane===2)&&(craneReady[st.crane]||CARGO_ORDER[st.crane].some(id=>!taken.includes(id)))),[gate,
   // Top of the transfer lane: a truck leaving the west stacker turns east across the tractors' lane, so the crossing
   // is held by whoever enters it first (see crossingByTruck / crossingByTractor).
   {s:TT_STOPS[3].s+.5,open:()=>!trucks.some(crossingByTruck)},
@@ -55698,15 +55712,10 @@ function advanceTractors(list,dt,allowed,gate,taken=[],craneReady=[],craneE=[],t
   // stand across the trucks' way out. Until then it waits at its stacker (short of the crossing).
   {s:TT_STOPS[3].s+.05,open:t=>!t.bypass||!out.some(o=>{const d=mod(o.s-TT_STOPS[3].s,L);return o!==t&&o.bypass&&BYPASS.on(o.s)&&d>.3&&d<BYPASS.sQ-TT_STOPS[3].s+TT.gap+1&&(!o.bayReserved||o.prev===o.s);})},
   // A box on its way across the quay lane to the bypass lane (crane 0 or 1): quay-lane tractors wait short of it.
-  ...[0,1].map(ci=>({s:crossGate(ci),open:t=>!!t.bypass||!(craneE[ci]!=null&&craneE[ci]>CRANE_SEQ.ready&&craneE[ci]<CRANE_SEQ.keys[7][0]&&out.some(o=>o.bypass&&o.held&&o.stop==='crane'+ci))})),
-  // West end: a bypass tractor loads at crane 0 6.5 m short of the corner, 0.5 m clear of the quay lane's turn. Only while it
-  // pulls out round the corner (its trailer's tail swings towards the quay lane) does a quay-lane tractor wait 12 m back.
-  // A bypass tractor pulling away from crane 0 waits for a quay-lane tractor that is already past that gate (at crane 0
-  // or turning the corner), so neither ever waits for the other.
+  ...[1].map(ci=>({s:crossGate(ci),open:t=>!!t.bypass||!(craneE[ci]!=null&&craneE[ci]>CRANE_SEQ.ready&&craneE[ci]<CRANE_SEQ.keys[7][0]&&out.some(o=>o.bypass&&o.held&&o.stop==='crane'+ci))})),
   // An unbooked tractor in the bypass lane waits at the start of its straight until crane 1 or 0 is free for it.
   {s:BYPASS.sQ+1,open:t=>!t.bypass||t.bayReserved||![0,1].some(hasWork)},
-  {s:BYPASS.stop0.s+.5,open:t=>!t.bypass||!out.some(o=>!o.bypass&&(mod(o.s-(L-11.98),L)<12+BYPASS.sJ+6))},
-  {s:L-12,open:t=>!!t.bypass||!out.some(o=>o.bypass&&!o.held&&BYPASS.on(o.s)&&mod(o.s-(BYPASS.stop0.s-.1),L)<L-BYPASS.stop0.s+BYPASS.sJ+6)}],(t,s)=>{
+],(t,s)=>{
   // Never overlap, and pull up no closer than 0.45 m to a tractor ahead on the loop (unless already that close, e.g.
   // side by side), counting where a tractor under way (it moved last step) will swing its trailer over the next 2.5 m.
   // Only the one behind keeps that margin, so two tractors never wait for each other.
@@ -55806,10 +55815,14 @@ const BYPASS=(()=>{const L=TT_ROUTE.length,sR=TT_STOPS[3].s,zL=54.5,xQ=18,sQ=TT_
  const a0=Math.asin(Math.max(0,Math.min(1,(zR-(zL-R))/R))),arcE=R*(Math.PI/2-a0);
  const entryAt=(x0,d)=>{if(d<=arcE){const a=a0+d/R;return [x0-R+R*Math.cos(a),zL-R+R*Math.sin(a),Math.atan2(-Math.cos(a),-Math.sin(a))];}return [x0-R-(d-arcE),zL,Math.PI];};
  const lenE=x0=>arcE+(x0-R-xQ),arcX=r*Math.PI/2,lenX=arcX+(zL-r-zJ),kX=lenX/sJ;
- const exitAt=d=>{if(d<=arcX){const a=d/r;return [-27-r*Math.sin(a),zL-r+r*Math.cos(a),Math.atan2(Math.sin(a),-Math.cos(a))];}return [-30,zL-r-(d-arcX),Math.PI/2];};
- const X0=[34,46,40],dQ=sQ-sR,dL=mod(L-sR,L),Lm=dL+sJ,stop0={s:TT_STOPS[0].s-6.5,hold:true,name:'crane0',crane:0,byp:true};
- return {sR,sQ,sJ,zL,stop0,drop0:CRANES[0].drop+6.5,on:s=>mod(s-sR,L)<=Lm,quay:s=>{const d=mod(s-sR,L);return d>=dQ&&d<=dL;},
-  at(s,b){const d=mod(s-sR,L);if(d<=dQ){const x0=X0[b-1];return entryAt(x0,d*lenE(x0)/dQ);}if(d<=dL){const q=TT_ROUTE.at(mod(s,L));return [q[0],zL,q[2]];}return exitAt((d-dL)*kX);}};})();
+ const exitAt=d=>{if(d<=arcX){const a=d/r;return [XW-r*Math.sin(a),zL-r+r*Math.cos(a),Math.atan2(Math.sin(a),-Math.cos(a))];}return [XW-3,zL-r-(d-arcX),Math.PI/2];};
+ // Past crane 1 the lane rejoins the quay lane in a 16 m S (x = -14 to -30, room the longer pier gives), so a tractor
+ // for crane 0 waits for its box in the quay lane like the others, and every bypass tractor turns the west corner there.
+ const X0=[34,46,40],dQ=sQ-sR,xM0=-14,xM1=-30,sM0=TT_TOP+37-xM0,sM1=TT_TOP+37-xM1,dM0=mod(sM0-sR,L),Lm=mod(sM1-sR,L),zQ=TT_ROUTE.at(TT_TOP+1)[1];
+ return {sR,sQ,sJ,zL,sM0,sM1,on:s=>mod(s-sR,L)<=Lm,lane:s=>mod(s-sR,L)<=dM0,quay:s=>{const d=mod(s-sR,L);return d>=dQ&&d<=Lm;},
+  at(s,b){const d=mod(s-sR,L);if(d<=dQ){const x0=X0[b-1];return entryAt(x0,d*lenE(x0)/dQ);}
+   const q=TT_ROUTE.at(mod(s,L)),f=Math.max(0,Math.min(1,(xM0-q[0])/(xM0-xM1))),z=zL+(zQ-zL)*f*f*(3-2*f),dz=(zQ-zL)*6*f*(1-f)/(xM0-xM1);
+   return [q[0],z,Math.atan2(-dz,-1)];}};})();
 function tractorPosition(s,slot,bypass){if(bypass&&BYPASS.on(s))return BYPASS.at(s,bypass);return pocketPosition(TT_ROUTE,s,slot,TT_ZONE.enter+10,TT_TOP-1.5,14,13);}
 // Point on the vessel route; beyond either end it continues straight (used for the tugs).
 function routePoint(d){const L=ROUTE.length;if(d>=0&&d<=L)return ROUTE.at(d);const e=ROUTE.at(d<0?0:L),k=d<0?d:d-L;return [e[0]+Math.cos(e[2])*k,e[1]-Math.sin(e[2])*k,e[2]];}
@@ -55905,7 +55918,8 @@ const PILOT=(()=>{const base=[84,-30],W=[14,-318],run=CYCLE.run,total=TUG_SEA.to
   if(p<retStart+retT){const q=RET.at(RET.len*ease((p-retStart)/retT));return [q[0],q[1],q[2],-1,false,0];}
   return [...atBase,-1,false,0];}
  return {pos,pB,pW,pRel,total};})();
-const api={PILOT,TUG_T,RS_PACE,BYPASS,tugPosition,dredgerPosition,PARKING_S,TRUCK_ROUTE_LENGTH:TRUCK_ROUTE.length,THR,CYCLE,TT,TT_STOPS,TRUCK_STOPS,CRANE_SEQ,CRANES,RS,TRUCK,TT_ZONE,TRUCK_ZONE,initialTrucks,initialReach,advanceTrucks,advanceReach,truckPosition,ROUTE_LENGTH:ROUTE.length,routePoint,evaluate,advance,vesselPosition,initialTractors,advanceTractors,tractorPosition};root.PotiOps=api;if(typeof module!=='undefined')module.exports=api;
+const PIER=Object.freeze({west:WEST_X,north:6.7});
+const api={PIER,PILOT,TUG_T,RS_PACE,BYPASS,tugPosition,dredgerPosition,PARKING_S,TRUCK_ROUTE_LENGTH:TRUCK_ROUTE.length,THR,CYCLE,TT,TT_STOPS,TRUCK_STOPS,CRANE_SEQ,CRANES,RS,TRUCK,TT_ZONE,TRUCK_ZONE,initialTrucks,initialReach,advanceTrucks,advanceReach,truckPosition,ROUTE_LENGTH:ROUTE.length,routePoint,evaluate,advance,vesselPosition,initialTractors,advanceTractors,tractorPosition};root.PotiOps=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
 
 </script><script>
@@ -56153,7 +56167,7 @@ if(!detailed)try{PotiModels.mergeStatic(model.root,[pilotRig.boat,...(model.root
 const waterMaterial=new T.ShaderMaterial({fog:true,uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,{uTime:{value:0},uWave:{value:.7},uNight:{value:0},uWind:{value:8},uWindDir:{value:new T.Vector2(1,0)}}]),vertexShader:`uniform float uTime;uniform float uWave;uniform float uWind;uniform vec2 uWindDir;varying vec3 vWorld;varying vec3 vNormal;
 #include <fog_pars_vertex>
 float boxDist(vec2 q,vec2 c,vec2 h){vec2 d=abs(q-c)-h;return length(max(d,vec2(0.)))+min(max(d.x,d.y),0.);}
-float shoreDist(vec2 q){float d=boxDist(q,vec2(0.,37.05),vec2(69.,33.55));
+float shoreDist(vec2 q){float d=boxDist(q,vec2(-6.9,40.4),vec2(75.9,36.9));
  d=min(d,boxDist(q,vec2(166.,34.),vec2(96.,30.5)));d=min(d,boxDist(q,vec2(166.,88.),vec2(96.,26.)));
  d=min(d,boxDist(q,vec2(143.,-113.),vec2(99.,8.)));d=min(d,boxDist(q,vec2(77.,96.),vec2(9.,72.5)));d=min(d,boxDist(q,vec2(96.,140.),vec2(10.,28.5)));
  d=min(d,boxDist(q,vec2(90.,-5.25),vec2(10.,8.75)));d=min(d,boxDist(q,vec2(100.,-29.5),vec2(12.,8.4)));
@@ -56186,7 +56200,7 @@ function craneStep(ci,e){const c=model.cranes[ci],seq=PotiOps.CRANE_SEQ,p=handli
  // Crane 0 loading in the bypass lane (6.5 m east of its quay-lane drop): the box crosses the quay lane 2.25 m further
  // west and only slides over the trailer as it is lowered, so it never passes over the cab of the tractor at crane 1.
  const pass=drop-2.25*clamp((drop-PotiOps.CRANES[ci].drop)/6.5,0,1);
- const shipHigh={...shipLow,y:height},ttHigh={...ttLow,x:pass,y:height},ttUp={...ttLow,y:height},clear={x:pass,z:76.1,y:height},ready={x:pass,z:64,y:height};
+ const shipHigh={...shipLow,y:height},ttHigh={...ttLow,x:pass,y:height},ttUp={...ttLow,y:height},clear={x:pass,z:76.1+PotiOps.PIER.north,y:height},ready={x:pass,z:64,y:height};
  const frames=[[0,handling[ci].startPoint],[3.5,shipHigh],[6,shipLow],[6.5,shipLow],[8.5,shipHigh],[11,clear],[12.8,ready],[13.5,ttHigh],[16,ttLow],[16.5,ttLow],[18.5,ttUp]];
  let j=0;while(j<frames.length-2&&e>frames[j+1][0])j++;const [t0,a]=frames[j],[t1,b]=frames[j+1],f=seg(e,t0,t1);
  if(a==='start'){const target=c.poseFor(b.x,b.z,b.y),start=handling[ci].start;target.psi=start.psi+Math.atan2(Math.sin(target.psi-start.psi),Math.cos(target.psi-start.psi));c.apply(lerpPose(start,target,f));}
@@ -56261,7 +56275,7 @@ function updateYard(){for(const [id,p] of Object.entries(model.cargo))p.visible=
   L.load.visible=show;const le=tt.stop==='locks'?7-tt.wait*1.656:0;(L.trailer.userData.twistlocks||[]).forEach((lock,k)=>lock.visible=show&&!tt.unlocked&&le<(k<2?5.4:2));if(tt.cargo&&model.cargo[tt.cargo])L.load.material=model.cargo[tt.cargo].material;});
  (motion.craneCycles||[]).forEach((c,ci)=>{if(c.cargo)active[ci]={e:c.e,key:ci+':'+c.serial,cargo:c.cargo};});
  active.forEach((a,ci)=>{const c=model.cranes[ci],h=handling[ci];if(!a){c.carry.visible=false;return;}if(h.key!==a.key){h.key=a.key;h.start={...c.pose};c.group.updateMatrixWorld(true);const start=c.carry.parent.getWorldPosition(new T.Vector3());h.startPoint={x:start.x,y:start.y,z:start.z};h.source=model.cargo[a.cargo];if(h.source)c.carry.material=h.source.material;}{// Box goes to the lane of the tractor booked for this crane (bypass lane or quay lane), eased if that changes.
-  const bk=motion.tractors.find(t=>t.held&&t.stop==='crane'+ci)||motion.tractors.find(t=>t.crane===ci&&!t.loaded&&t.bayReserved),zt=bk&&bk.bypass?PotiOps.BYPASS.zL:59.1,xt=bk&&bk.bypass&&ci===0?PotiOps.BYPASS.drop0:PotiOps.CRANES[ci].drop,hh=handling[ci],ez=Math.min(1,simDt*1.5);
+  const bk=motion.tractors.find(t=>t.held&&t.stop==='crane'+ci)||motion.tractors.find(t=>t.crane===ci&&!t.loaded&&t.bayReserved),zt=bk&&bk.bypass&&PotiOps.BYPASS.lane(PotiOps.TT_STOPS[ci].s)?PotiOps.BYPASS.zL:59.1,xt=PotiOps.CRANES[ci].drop,hh=handling[ci],ez=Math.min(1,simDt*1.5);
   hh.laneZ=hh.laneZ===undefined?zt:hh.laneZ+(zt-hh.laneZ)*ez;hh.dropX=hh.dropX===undefined?xt:hh.dropX+(xt-hh.dropX)*ez;}craneStep(ci,a.e);});
  if(model.cranes[3])model.cranes[3].update(motion.craneClock);updateSupervisor(motion.time);
  (motion.trucks||[]).forEach((tk,i)=>{const L=model.trucks[i];placeVehicle(s=>PotiOps.truckPosition(s,tk.rsSlot),tk.s,PotiOps.TRUCK,{head:L.truck,trailer:L.trailer});
@@ -56332,8 +56346,9 @@ const moorings=(()=>{const st=[[-53,5.5],[-49,7.5],[-38,8],[22,8],[36,7.3],[44,4
  const ropeMat=new T.MeshStandardMaterial({color:'#e9e3cc',roughness:.8}),geo=new T.CylinderGeometry(1,1,1,5),list=[];
  const add=(ship,sx,sz,deck,x,bollard,show)=>{const w=half(x/sx)*sz*.97,segs=[0,1].map(()=>{const m=new T.Mesh(geo,ropeMat);m.castShadow=false;scene.add(m);return m;});
   list.push({ship,a:[new T.Vector3(x,deck,w),new T.Vector3(x,deck,-w)],b:new T.Vector3(...bollard),segs,show});};
- const B14=x=>[x,.95,68.3],B12=x=>[x,.95,4.6],JT=x=>[x,.95,-106.1];
- for(const [x,bx] of [[44,54],[44,49],[40,39],[-44,-51],[-50,-61]])add(model.moored,1,1,7,x,B14(bx));
+ // Bollards west of x = -25 moved west with the pier's west end, and the Berth 14 row north with its edge.
+ const PW=x=>x<-25?x+PotiOps.PIER.west:x,B14=x=>[PW(x),.95,68.3+PotiOps.PIER.north],B12=x=>[PW(x),.95,4.6],JT=x=>[x,.95,-106.1];
+ for(const [x,bx] of [[44,54],[44,49],[40,39],[-44,-41],[-50,-51]])add(model.moored,1,1,7,x,B14(bx));
  if(model.tanker)for(const [x,bx] of [[44,162],[44,156],[36,144],[-44,54],[-48,48]])add(model.tanker,1,1,7,x,JT(bx));
  const roro=model.root.userData.roro;if(roro)for(const [x,bx] of [[34,162],[30,174],[18,204],[-18,216],[-32,240],[-40,246]])add(roro,.82,.82,6.5,x,JT(bx));
  if(model.dredgerModel)for(const [x,bx] of [[-12.5,68],[-6,63],[6,53],[12.5,48]])add(model.dredgerModel,.3,.43,3.9,x,B12(bx));
@@ -56470,7 +56485,7 @@ const PRESENT=(()=>{const bar=document.createElement('div');bar.id='present-bar'
  // CCTV views: camera height and direction after the Berth 12 cameras, wide lens, timestamp overlay.
  const CCTV={'12-1':[1.546,.19,80,120,0,40],'12-2':[-1.457,.38,38,125,0,40],'12-8':[1.31,.45,32,-60,0,52]};
  // Cameras on the high masts (28 m up): [mast x, z, look-at x, z]. Each also gets a small camera body on its mast.
- const MASTCAMS={'m-b14':[-64,64.1,5,55],'m-b12':[-62,5.2,-25,-8],'m-rs':[12,31,40,40],'m-gate':[63,26,100,55],'m-yard':[239,38,140,40],'m-b15':[77,76,40,62],'m-sea':[-62,5.2,-10,-160]};
+ const MASTCAMS={'m-b14':[-77.8,70.8,5,55],'m-b12':[-75.8,5.2,-25,-8],'m-rs':[12,31,40,40],'m-gate':[63,26,100,55],'m-yard':[239,38,140,40],'m-b15':[77,76,40,62],'m-sea':[-62,5.2,-10,-160]};
  {const {box}=PotiModels.kit;for(const [k,[mx,mz,tx,tz]] of Object.entries(MASTCAMS)){const a=Math.atan2(-(tz-mz),tx-mx),g=new T.Group();g.name='CCTV '+k;g.position.set(mx+Math.cos(a)*.9,27.6,mz-Math.sin(a)*.9);g.rotation.y=a;scene.add(g);
    box(g,0,.3,0,.3,.5,.3,'#6c7478');box(g,.45,0,0,.75,.3,.32,'#e9ecec');box(g,.6,.2,0,.95,.06,.42,'#d3d8d8');box(g,.84,0,0,.04,.2,.22,'#16222a');
    /* Eye sits on the camera body, 2.2 m out from the mast, so the mast's own lamps stay behind it. */const ex=mx+Math.cos(a)*2.2,ez=mz-Math.sin(a)*2.2,dx=ex-tx,dz=ez-tz,h=Math.hypot(dx,dz),d=Math.hypot(h,27.6);CCTV[k]=[Math.atan2(dx,-dz),Math.asin(27.6/d),d,tx,0,tz];}}
