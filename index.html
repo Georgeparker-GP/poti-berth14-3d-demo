@@ -55214,6 +55214,48 @@ function urbanZone(root){const g=new T.Group();g.userData.kind='urban';root.add(
  for(let z=124;z<210;z+=9){cylinder(g,156,1.4,z,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.7,8,6),mat('#43813f'),156,3.9,z);}
  for(let x=100;x<262;x+=11){cylinder(g,x,1.4,124,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.6,8,6),mat('#43813f'),x,3.9,124);}
  return g;}
+// The city carried on north to z = 305 (two more rows of blocks, a seafront promenade), with a coast road along its west
+// side (x = 86) on a new 10 m strip, armoured on the sea side by a tetrapod revetment that starts at the north breakwater's
+// root and turns round the north-west corner. Built static and merged into a few meshes.
+function cityNorth(root){const g=new T.Group();g.name='City (north)';g.userData.kind='urban';root.add(g);
+ const ground='#8a9182',asph='#4b5254',pave='#b9b4a8',walls=['#e6e0d2','#dcd3c2','#cfd6d6','#e2cdb6','#d9dcd8','#e8e4da'],roofs=['#b0503c','#a8452f','#6d5c51','#8a6a4f'];
+ box(g,180,-1.6,260.25,180,3.2,90.5,ground);box(g,85,-1.6,236.75,10,3.2,137,ground);
+ // Streets: avenues carried north, three new cross streets, the promenade road and the coast road.
+ for(const x of [112,150,190,232])box(g,x,.07,256,9,.14,84,asph);
+ for(const z of [225,256,287])box(g,176,.07,z,186,.14,9,asph);
+ box(g,176,.07,296.5,186,.14,8,asph);box(g,86,.07,227.5,8,.14,146,asph);
+ for(const z of [163,194])box(g,86.5,.07,z,9,.14,9,asph);
+ for(const z of [225,256,287,296.5])for(let x=88;x<266;x+=7)box(g,x,.16,z,3,.04,.2,'#e7e3cf');
+ for(let z=160;z<297;z+=7)box(g,86,.16,z,.2,.04,3,'#e7e3cf');
+ for(const x of [112,150,190,232])for(let z=218;z<292;z+=7)box(g,x,.16,z,.2,.04,3,'#e7e3cf');
+ // Seafront: pavement, railing, trees and lamps along the north edge.
+ box(g,176,.06,302.8,186,.12,4.6,pave);box(g,176,1,305,186,.08,.08,'#c9ccc8');for(let x=84;x<270;x+=3)box(g,x,.5,305,.08,1,.08,'#c9ccc8');
+ for(let x=90;x<268;x+=12){cylinder(g,x,1.4,302.5,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.7,8,6),mat('#43813f'),x,3.9,302.5);}
+ for(let x=96;x<266;x+=24)streetLight(g,x,300.2,-1);for(let z=170;z<296;z+=24)streetLight(g,90.6,z,-1,true);
+ // Houses: each block split into cells, one building per cell, a few towers among them.
+ let seed=313;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+ const xs=[[91,107.5],[116.5,145.5],[154.5,185.5],[194.5,227.5],[236.5,268]],zs=[[229.5,251.5],[260.5,282.5]];
+ for(const [x0,x1] of xs)for(const [z0,z1] of zs){const nx=x1-x0>20?2:1,nz=2,cw=(x1-x0)/nx,cd=(z1-z0)/nz;
+  for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const w=cw-2-rnd()*3,d=cd-1.5-rnd()*2.5,tower=rnd()<.18,h=tower?24+rnd()*12:6+rnd()*rnd()*18,
+   x=x0+cw*(i+.5),z=z0+cd*(j+.5),wall=walls[Math.floor(rnd()*walls.length)];
+   box(g,x,h/2,z,w,h,d,wall);
+   if(h<14){const r=mesh(g,new T.ConeGeometry(Math.max(w,d)*.72,2.6,4),mat(roofs[Math.floor(rnd()*roofs.length)]),x,h+1.3,z);r.rotation.y=Math.PI/4;}
+   else box(g,x,h+.35,z,w+.8,.7,d+.8,'#9aa0a0');
+   for(let y=2.2;y<h-1.4;y+=3.2)for(let k=-1;k<=1;k++)for(const sd of [-1,1]){const lit=(Math.floor(x+z+y*3+k*5+sd*2)%7+7)%7<2;box(g,x+k*w*.3,y,z+sd*(d/2+.04),w*.18,1.3,.08,lit?cityWindowMaterial:'#2a3e48');}}}
+ // Grass and trees between the old city and the first new street.
+ box(g,176,.05,218,180,.1,5,'#5f8a4c');for(let x=94;x<266;x+=9){cylinder(g,x,1.4,218,.3,2.8,'#6d5a45');mesh(g,new T.SphereGeometry(1.6,8,6),mat('#43813f'),x,3.9,218);}
+ // Coast road edge: a low parapet wall and a guard rail on the sea side.
+ box(g,80.6,.6,237,.6,1.2,138,'#c7c4ba');box(g,81.4,.75,237,.08,.25,138,'#aab2b4');for(let z=169;z<305;z+=3)box(g,81.4,.35,z,.1,.7,.1,'#aab2b4');
+ if(typeof mergeStatic==='function')mergeStatic(g,[],g);
+ // Tetrapod revetment on the west side, round the north-west corner.
+ let s2=29;const r2=()=>{s2=(s2*16807)%2147483647;return s2/2147483647;};const items=[];
+ for(let z=166;z<306;z+=1.7)for(let x=71.2;x<80;x+=1.9){const lay=x>75.5?[.9,2.3]:[.1];for(const y of lay)items.push([x+r2()*.6-.3,y+r2()*.4,z+r2()*.8]);}
+ for(let r=1.2;r<=9;r+=1.9)for(let a=Math.PI/2;a<=Math.PI;a+=1.9/Math.max(r,2))for(const y of r<4.5?[.9,2.3]:[.1])items.push([80+Math.cos(a)*r,y+r2()*.4,306+Math.sin(a)*r]);
+ for(let x=80;x<268;x+=1.9)for(let o=306.5;o<313;o+=1.9)for(const y of o<309.5?[.9,2.3]:[.1])items.push([x+r2()*.6,y+r2()*.4,o+r2()*.5]);
+ const core=box(g,75.5,-1,236,10,1.6,142,'#4d514f');core.castShadow=false;box(g,175,-1,309.5,190,1.6,7,'#4d514f').castShadow=false;
+ const inst=new T.InstancedMesh(tetrapodGeometry(),mat('#d9d6cc',0,.85),items.length);inst.castShadow=true;inst.receiveShadow=true;inst.userData.kind='breakwater';
+ const m4=new T.Matrix4(),q=new T.Quaternion(),e=new T.Euler(),sc=new T.Vector3();items.forEach((p,i)=>{e.set(r2()*6.3,r2()*6.3,r2()*6.3);q.setFromEuler(e);const k=.85+r2()*.3;sc.set(k,k,k);m4.compose(new T.Vector3(...p),q,sc);inst.setMatrixAt(i,m4);});g.add(inst);
+ return g;}
 // Palm with a gently curved trunk and drooping fronds.
 const animatedPalms=[];
 function palm(g,x,z,h=7,lean=[.6,.2]){const P=new T.Group();P.name='Wind-responsive palm';P.position.set(x,0,z);g.add(P);const trunk='#8a6f52',segments=[],fronds=[];
@@ -55500,7 +55542,7 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const gottwald=mobileCrane(-15,2.2,{z:8,rot:0,base:'#1668b3',cab:'#8f989b',tower:'#9aa3a6',boom:'#7fb9e0',lattice:['#9fd0ea','#6aa8d6','#8cc3e4'],name:'GOTTWALD',tool:'grab'});
  root.add(gottwald.group);cranes.push(gottwald);
  const supervisor=berthSupervisor();root.add(supervisor);
- yardDetails(root);barrierLines(root);roadArrow(root);for(let k=0;k<3;k++)flatWagon(root,132+k*20.3,59);dryDockShoreLights(root);const football=miniPitch(root,131,179),buoys=channelBuoys(root);urbanZone(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
+ yardDetails(root);barrierLines(root);roadArrow(root);for(let k=0;k<3;k++)flatWagon(root,132+k*20.3,59);dryDockShoreLights(root);const football=miniPitch(root,131,179),buoys=channelBuoys(root);urbanZone(root);cityNorth(root);label(root,'CITY',180,4,120,26,'#2c4a4e');
  // Two stacks side by side, close to the terminal front.
  flatRackStack(root);flatRackStack(root,-40.6,37.5,1);mechanicsCorner(root);kiaK2700(root,-45.5,52,0);/* nose towards the fence opening: a clear way out east */const twistlocks=twistlockStation(root);
  const tractors=Array.from({length:6},(_,i)=>{const tractor=terminalTractor(i+1),tr=trailer();root.add(tractor);root.add(tr);return {tractor,trailer:tr,load:tr.userData.load};});
@@ -56296,7 +56338,7 @@ float shoreDist(vec2 q){float d=boxDist(q,vec2(-6.9,40.4),vec2(75.9,36.9));
  d=min(d,boxDist(q,vec2(166.,34.),vec2(96.,30.5)));d=min(d,boxDist(q,vec2(166.,88.),vec2(96.,26.)));
  d=min(d,boxDist(q,vec2(143.,-113.),vec2(99.,8.)));d=min(d,boxDist(q,vec2(77.,96.),vec2(9.,72.5)));d=min(d,boxDist(q,vec2(96.,140.),vec2(10.,28.5)));
  d=min(d,boxDist(q,vec2(90.,-5.25),vec2(10.,8.75)));d=min(d,boxDist(q,vec2(100.,-29.5),vec2(12.,8.4)));
- d=min(d,boxDist(q,vec2(187.,-20.75),vec2(53.5,24.)));d=min(d,boxDist(q,vec2(180.,164.),vec2(90.,51.)));return d;}
+ d=min(d,boxDist(q,vec2(187.,-20.75),vec2(53.5,24.)));d=min(d,boxDist(q,vec2(175.,209.25),vec2(95.,96.25)));return d;}
 void main(){vec3 p=position;float t=uTime;
  vec2 q=(modelMatrix*vec4(position.xy,0.,1.)).xz;
  float damp=smoothstep(0.,5.,shoreDist(q));
