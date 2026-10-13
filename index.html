@@ -55897,21 +55897,24 @@ const PILOT=(()=>{const base=[84,-30],W=[14,-318],run=CYCLE.run,total=TUG_SEA.to
  const X=rel(pt(43),22,-24),AWAY=smoothPath([[X[0],X[1]],[22,-275],[18,-302],W]),pW=pt(43)+AWAY.len/5/run;
  const trailEnd=routePoint(L-BEHIND),RET=smoothPath([[trailEnd[0],trailEnd[1]],[25,-48],[55,-40],[72,-34],base]),retStart=1+1/run,retT=RET.len/5/run;
  const atBase=[base[0],base[1],Math.PI/2];
+ // Arriving pilot: up the ladder (0..1), over the rail (to 1.15), then 14 s walking aft along the deck to the house door
+ // (1.15..2.15); -1 when not on show.
+ const aboard=p=>{if(p<.06)return -1;const c=(p-.06)/.065;if(c<1.15)return c;const w=1.15+(p-.06-.065*1.15)*run/14;return w<2.15?w:-1;};
  // Returns [x, z, heading, climb, pilotOnLaunch, ladderSide]. climb: -1 not on the ladder, 0..1 from the launch's deck to the
- // ship's rail, 1..1.15 stepping over the rail; ladderSide: 1 port, -1 starboard, 0 no ladder rigged.
+ // ship's rail, 1..1.15 stepping over the rail, 1.15..2.15 walking between the rail and the house door; ladderSide: 1 port, -1 starboard, 0 no ladder rigged.
  function pos(prog){let p=prog;if(p<0)p+=total;
   if(p>=pB&&p<pt(8)){const f=ease((p-pB)/(pt(8)-pB)),q=OUT.at(OUT.len*f);return [q[0],q[1],q[2],-1,false,0];}
-  if(p>=pt(8)&&p<pt(20)){const f=ease((p-pt(8))*run/12);return [...rel(p,lerp(30,4,f),lerp(-18,-SIDE,f)),p>pt(14)?1.15:-1,false,p>pt(14)?-1:0];}
-  if(p>=pt(20)&&p<pt(33)){const t=(p-pRel)*run,c=t<22?1.15:t<30?1.15*(1-(t-22)/8):-1;return [...rel(p,4,-SIDE),c,t>=30,-1];}
+  if(p>=pt(8)&&p<pt(20)){const f=ease((p-pt(8))*run/12),t=(p-pRel)*run;return [...rel(p,lerp(30,4,f),lerp(-18,-SIDE,f)),1.15+(22-t)/14,false,-1];}
+  if(p>=pt(20)&&p<pt(33)){const t=(p-pRel)*run,c=t<22?1.15+(22-t)/14:t<30?1.15*(1-(t-22)/8):-1;return [...rel(p,4,-SIDE),c,t>=30,-1];}
   if(p>=pt(33)&&p<pt(43)){const f=ease((p-pt(33))*run/10),t=(p-pRel)*run;return [...rel(p,lerp(4,22,f),lerp(-SIDE,-24,f)),-1,t<36,t<36?-1:0];}
   if(p>=pt(43)&&p<pW){const q=AWAY.at(AWAY.len*ease((p-pt(43))/(pW-pt(43))));return [q[0],q[1],q[2],-1,false,0];}
   // Waiting off the fairway, turned to face the incoming ship.
   const hW=AWAY.at(AWAY.len)[2],atW=t=>[W[0],W[1],angLerp(hW,N,ease(t/12))];
   if(p>=pW)return [...atW((p-pW)*run),-1,false,0];
   if(p<.035){return [...mix(atW(1e3),along(p),ease(p/.035)),-1,p>.02,p>.025?1:0];}
-  if(p<.15){const c=p<.06?-1:Math.min(1.15,(p-.06)/.065);return [...along(p),c,p<.06,p<.14?1:0];}
+  if(p<.15){return [...along(p),aboard(p),p<.06,p<.14?1:0];}
   // Drop back along the port side, then slide into the ship's wake (still on the straight).
-  if(p<.24){const f=ease((p-.15)/.09);return [...rel(p,lerp(4,BEHIND,f),lerp(SIDE,13,f)),-1,false,0];}
+  if(p<.24){const f=ease((p-.15)/.09);return [...rel(p,lerp(4,BEHIND,f),lerp(SIDE,13,f)),aboard(p),false,0];}
   if(p<.30){const f=ease((p-.24)/.06);return [...rel(p,BEHIND,lerp(13,0,f)),-1,false,0];}
   if(p<1)return [...trail(p),-1,false,0];
   if(p<retStart)return [...trail(1),-1,false,0];
@@ -56027,7 +56030,12 @@ const pilotRig=(()=>{const {pedestrian,box,beam,mat}=PotiModels.kit;let boat=nul
  for(const sx of [-.36,.36])beam(ladder,[sx,.25,0],[sx,3.62,0],.07,rope);for(let y=.45;y<3.5;y+=.32)box(ladder,0,y,.04,.78,.09,.16,'#c08a4a');ladder.visible=false;
  const man=pedestrian('#f28c28','#22303f','#2b2b2b');man.scale.setScalar(.55);man.userData.parts.umbrella.visible=false;
  box(man,0,3.28,0,.62,.14,.62,'#f4f4f0');box(man,0,3.18,0,.5,.2,.5,'#f4f4f0');scene.add(man);man.visible=false;
- return {boat,ladder,man};})();
+ // Walk on deck in the ship's frame (metres forward of midships, metres out to the ladder side): from the rail abreast
+ // the ladder aft to the house front (x = -19.6) and through a door 2.4 m off the centreline.
+ const pts=[[-1.1,3.42],[-18.3,3.42],[-19.3,2.4],[-20.6,2.4]],cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
+ // Doors in the house front on both sides (the ship model is scaled 0.51, hence the division).
+ const S=model.moving,k=1/S.scale.x;for(const sd of [-1,1]){box(S,-19.64*k,4.55*k,sd*2.4*k,.06*k,1.9*k,.85*k,'#55606a');box(S,-19.66*k,4.55*k,sd*2.4*k,.04*k,1.75*k,.7*k,'#2c343b');}
+ return {boat,ladder,man,walk:{pts,cum,len:cum[cum.length-1]}};})();
 function updatePilot(t){const P=PotiOps.PILOT,b=pilotRig.boat;if(!P||!b)return;const p=motion.vesselProgress,q=P.pos(p),sea=weather.wave||0;
  b.position.set(q[0],Math.sin(t*1.3+q[0])*.08*(1+sea),q[1]);b.rotation.y=q[2];b.rotation.z=Math.sin(t*1.1)*.02*(1+sea);
  const ship=PotiOps.vesselPosition(p),h=ship[2],fx=Math.cos(h),fz=-Math.sin(h),px=-Math.sin(h),pz=-Math.cos(h),sy=model.moving.position.y;
@@ -56035,7 +56043,7 @@ function updatePilot(t){const P=PotiOps.PILOT,b=pilotRig.boat;if(!P||!b)return;c
  // lies 4 m aft of midships and its foredeck is 2.9 m ahead of its centre.
  const sd=q[5]||(q[3]>=0?1:0),ox=px*sd,oz=pz*sd,lx=ship[0]+ox*4.12-fx*1.1,lz=ship[1]+oz*4.12-fz*1.1;
  pilotRig.ladder.visible=!!q[5];if(q[5]){pilotRig.ladder.position.set(lx,sy,lz);pilotRig.ladder.rotation.y=sd>0?h:h+Math.PI;}
- const m=pilotRig.man,c=q[3],legs=m.userData.parts.legs,arms=m.userData.parts.arms;m.visible=q[4]||(c>=0&&c<1.15);
+ const m=pilotRig.man,c=q[3],legs=m.userData.parts.legs,arms=m.userData.parts.arms;m.visible=q[4]||(c>=0&&c<2.15);
  if(!m.visible)return;
  // Facing the hull: the figure's +x is its front.
  const face=sd>0?h-Math.PI/2:h+Math.PI/2,deck=b.position.y+1.4;m.rotation.set(0,face,0);
@@ -56043,9 +56051,16 @@ function updatePilot(t){const P=PotiOps.PILOT,b=pilotRig.boat;if(!P||!b)return;c
  if(c<=1){// On the ladder: hand over hand, one foot up a step at a time, back to the sea.
   const top=sy+3.5,y=deck+(top-deck)*c,sw=Math.sin(c*Math.PI*2*6);m.position.set(lx+ox*.4,y,lz+oz*.4);
   arms.forEach((a,i)=>a.rotation.z=2.15+(i?sw:-sw)*.4);legs.forEach((l,i)=>l.rotation.z=.3+Math.max(0,i?-sw:sw)*.7);m.rotation.z=-.08;return;}
- // Over the rail: from the top step onto the deck, a short lift and 1.2 m inboard.
- const f=(c-1)/.15,top=sy+3.5;m.position.set(lx+ox*(.4-1.6*f),top+.12*f+.35*Math.sin(Math.PI*f),lz+oz*(.4-1.6*f));
- arms.forEach((a,i)=>a.rotation.z=1.2*(1-f));legs.forEach((l,i)=>l.rotation.z=(i?.8:-.2)*Math.sin(Math.PI*f));}
+ if(c<=1.15){// Over the rail: from the top step onto the deck walkway (0.7 m inboard of the side), a short lift.
+  const f=(c-1)/.15,top=sy+3.5;m.position.set(lx+ox*(.4-1.1*f),top+.1*f+.35*Math.sin(Math.PI*f),lz+oz*(.4-1.1*f));
+  arms.forEach((a,i)=>a.rotation.z=1.2*(1-f));legs.forEach((l,i)=>l.rotation.z=(i?.8:-.2)*Math.sin(Math.PI*f));return;}
+ // Along the walkway between the hatch coamings and the rail to the door in the front of the house, and in through it.
+ const W=pilotRig.walk,d=(c-1.15)*W.len;let k=0;while(k<W.pts.length-2&&d>W.cum[k+1])k++;
+ const A=W.pts[k],B=W.pts[k+1],u=(d-W.cum[k])/(W.cum[k+1]-W.cum[k]),ax=A[0]+(B[0]-A[0])*u,sdist=A[1]+(B[1]-A[1])*u;
+ const wx=ship[0]+fx*ax+ox*sdist,wz=ship[1]+fz*ax+oz*sdist,dx=fx*(B[0]-A[0])+ox*(B[1]-A[1]),dz=fz*(B[0]-A[0])+oz*(B[1]-A[1]);
+ // Coming in (port ladder) he walks aft; going out (starboard ladder) the same path is run backwards.
+ m.position.set(wx,sy+3.6,wz);m.rotation.set(0,sd>0?Math.atan2(-dz,dx):Math.atan2(dz,-dx),0);const sw=Math.sin(d*3.2)*.5;
+ legs.forEach((l,i)=>l.rotation.z=i?sw:-sw);arms.forEach((a,i)=>a.rotation.z=i?-sw*.7:sw*.7);}
 // Street view ("pegman", as on web maps): drag the little yellow man onto the scene, or tap him, to stand there at eye
 // height; drag to look round, walk with the arrow keys / WASD or the on-screen pad, tap the ground to walk there, Esc or
 // the cross to go back to the orbit view. Walls, containers, vehicles, fences and the water's edge stop him: the
