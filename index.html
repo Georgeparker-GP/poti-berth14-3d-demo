@@ -55531,7 +55531,7 @@ function mergeParts(obj,keep=[]){const keepSet=new Set(keep),nodes=[];obj.traver
    geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
    const merged=new T.Mesh(geo,material);merged.castShadow=false;merged.receiveShadow=true;node.add(merged);for(const m of list)node.remove(m);}}
  return obj;}
-root.PotiModels={build,setNight,mergeStatic,mergeParts};
+root.PotiModels={build,setNight,mergeStatic,mergeParts,kit:{pedestrian,box,beam,mat}};
 })(window);
 
 </script><script>
@@ -55840,7 +55840,39 @@ function tugPosition(progress,index){const dep=1+CYCLE.dwell/CYCLE.run;
  if(t<T.turn)return [E[0],E[1],turn(E[2],E[2]+Math.PI,t/T.turn),false];t-=T.turn;
  if(t<T.back){const q=P.at(P.len*(1-ease(t/T.back)));return [q[0],q[1],q[2]+Math.PI,false];}t-=T.back;
  return [A[0],A[1],turn(A[2]+Math.PI,hA,t/T.fast),t>T.fast*.5];}
-const api={TUG_T,RS_PACE,BYPASS,tugPosition,dredgerPosition,PARKING_S,TRUCK_ROUTE_LENGTH:TRUCK_ROUTE.length,THR,CYCLE,TT,TT_STOPS,TRUCK_STOPS,CRANE_SEQ,CRANES,RS,TRUCK,TT_ZONE,TRUCK_ZONE,initialTrucks,initialReach,advanceTrucks,advanceReach,truckPosition,ROUTE_LENGTH:ROUTE.length,routePoint,evaluate,advance,vesselPosition,initialTractors,advanceTractors,tractorPosition};root.PotiOps=api;if(typeof module!=='undefined')module.exports=api;
+// Pilot launch (red PILOT boat moored at x = 84 by the church): once the departing ship is out past the buoys it runs out
+// to a standby point off the fairway, meets the next arrival before the buoyed channel, comes alongside its port side
+// while the pilot climbs the rope ladder, then follows the ship in, 95 m astern on its track; when the ship is fast and
+// it heads straight back to its berth, ahead of the tugs letting go. Everything is a function of the vessel progress, so
+// it holds with the ship when the weather stops manoeuvring.
+const PILOT=(()=>{const base=[84,-30],W=[14,-318],run=CYCLE.run,dep=1+CYCLE.dwell/run,total=dep+OUTBOUND.length/ROUTE.length,L=ROUTE.length,BEHIND=95;
+ const OUT=smoothPath([base,[70,-36],[40,-55],[15,-80],[4,-110],[2,-150],[2,-200],[6,-250],[14,-300],W]);
+ let pOut=dep;for(let p=dep;p<total;p+=.001){if(vesselPosition(p)[1]<-250){pOut=p;break;}}
+ const outT=Math.min(OUT.len/6,(total-pOut)*run-20)/run; // ~6 m/s, arriving at least 20 s before the ship comes back
+ const trailEnd=routePoint(L-BEHIND),RET=smoothPath([[trailEnd[0],trailEnd[1]],[25,-48],[55,-40],[72,-34],base]),retStart=1+1/run,retT=RET.len/5/run;
+ const ease=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);},lerp=(a,b,f)=>a+(b-a)*f,angLerp=(a,b,f)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*f;
+ // Alongside the port side (local -z of the ship), 4 m aft of midships.
+ const rel=(p,aft,side)=>{const q=vesselPosition(p),h=q[2],fx=Math.cos(h),fz=-Math.sin(h),px=-Math.sin(h),pz=-Math.cos(h);return [q[0]+px*side-fx*aft,q[1]+pz*side-fz*aft,h];};
+ const along=p=>rel(p,4,4.1+1.66+.35);
+ const trail=p=>{const q=routePoint(p*L-BEHIND);return [q[0],q[1],q[2]];};
+ const mix=(a,b,f)=>[lerp(a[0],b[0],f),lerp(a[1],b[1],f),angLerp(a[2],b[2],f)];
+ const atBase=[base[0],base[1],Math.PI/2],atW=[W[0],W[1],Math.PI/2+Math.PI];
+ // Returns [x, z, heading, pilotClimb (0..1 up the ladder, -1 not shown), pilotOnBoat].
+ function pos(prog){let p=prog;
+  if(p<0)p+=total;
+  if(p>=pOut&&p<pOut+outT){const f=ease((p-pOut)/outT),q=OUT.at(OUT.len*f);return [q[0],q[1],q[2],-1,true];}
+  if(p>=pOut+outT)return [W[0],W[1],-Math.PI/2+Math.PI,-1,true].map((v,i)=>i===2?OUT.at(OUT.len)[2]:v);
+  if(p<.035){const a=[W[0],W[1],OUT.at(OUT.len)[2]];return [...mix(a,along(p),ease(p/.035)),-1,true];}
+  if(p<.15){const c=p<.06?0:p>.12?1:(p-.06)/.06;return [...along(p),c,c<1];}
+  // Drop back along the port side, well outside the stern tug, then slide into the ship's wake (still on the straight).
+  if(p<.24){const f=ease((p-.15)/.09);return [...rel(p,lerp(4,BEHIND,f),lerp(6.1,13,f)),-1,false];}
+  if(p<.30){const f=ease((p-.24)/.06);return [...rel(p,BEHIND,lerp(13,0,f)),-1,false];}
+  if(p<1)return [...trail(p),-1,false];
+  if(p<retStart)return [...trail(1),-1,false];
+  if(p<retStart+retT){const q=RET.at(RET.len*ease((p-retStart)/retT));return [q[0],q[1],q[2],-1,true];}
+  return [...atBase,-1,true];}
+ return {pos,pOut,outT,total};})();
+const api={PILOT,TUG_T,RS_PACE,BYPASS,tugPosition,dredgerPosition,PARKING_S,TRUCK_ROUTE_LENGTH:TRUCK_ROUTE.length,THR,CYCLE,TT,TT_STOPS,TRUCK_STOPS,CRANE_SEQ,CRANES,RS,TRUCK,TT_ZONE,TRUCK_ZONE,initialTrucks,initialReach,advanceTrucks,advanceReach,truckPosition,ROUTE_LENGTH:ROUTE.length,routePoint,evaluate,advance,vesselPosition,initialTractors,advanceTractors,tractorPosition};root.PotiOps=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
 
 </script><script>
@@ -55941,6 +55973,25 @@ const scene=new T.Scene();scene.background=new T.Color('#8daab3');scene.fog=new 
 const hemi=new T.HemisphereLight('#d2e8f2','#787c62',2.4);scene.add(hemi);const sun=new T.DirectionalLight('#fff0cf',3);sun.position.set(-70,130,-80);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-155,right:155,top:145,bottom:-145,near:1,far:350});sun.shadow.normalBias=.3;sun.shadow.bias=-.00015;scene.add(sun);
 const model=PotiModels.build();scene.add(model.root);const anemometers=[],shipFlags=[];model.root.traverse(o=>{if(o.userData.anemometer)anemometers.push(o);if(o.userData.flag)shipFlags.push(o);});
 var STREET=null;
+// Pilot launch, rope ladder and pilot: placed every frame from PotiOps.PILOT (see updatePilot).
+const pilotRig=(()=>{const {pedestrian,box,beam,mat}=PotiModels.kit;let boat=null;model.root.traverse(o=>{if(o.userData.kind==='pilot')boat=o;});
+ const ladder=new T.Group();ladder.name='Pilot ladder';scene.add(ladder);const rope=mat('#d9c9a0',0,.9);
+ for(const sd of [-.3,.3])beam(ladder,[0,0,sd],[0,3.7,sd],.05,rope);for(let y=.35;y<3.6;y+=.3)box(ladder,0,y,0,.1,.08,.62,'#7a5636');ladder.visible=false;
+ const man=pedestrian('#f28c28','#22303f','#2b2b2b');man.scale.setScalar(.55);man.userData.parts.umbrella.visible=false;
+ box(man,0,3.28,0,.62,.14,.62,'#f4f4f0');box(man,0,3.18,0,.5,.2,.5,'#f4f4f0');scene.add(man);man.visible=false;
+ return {boat,ladder,man};})();
+function updatePilot(t){const P=PotiOps.PILOT,b=pilotRig.boat;if(!P||!b)return;const p=motion.vesselProgress,q=P.pos(p),sea=weather.wave||0;
+ b.position.set(q[0],Math.sin(t*1.3+q[0])*.08*(1+sea),q[1]);b.rotation.y=q[2];b.rotation.z=Math.sin(t*1.1)*.02*(1+sea);
+ // Ladder over the port side, abreast of the launch; the pilot stands on the foredeck, then climbs it.
+ const ship=PotiOps.vesselPosition(p),h=ship[2],fx=Math.cos(h),fz=-Math.sin(h),px=-Math.sin(h),pz=-Math.cos(h);
+ const lx=ship[0]+px*4.15-fx*4,lz=ship[1]+pz*4.15-fz*4,on=p>.025&&p<.16;pilotRig.ladder.visible=on;
+ if(on){pilotRig.ladder.position.set(lx,model.moving.position.y,lz);pilotRig.ladder.rotation.y=h;}
+ const m=pilotRig.man,c=q[3];m.visible=(p>.02&&p<.06)||(c>0&&c<1);
+ if(!m.visible)return;const legs=m.userData.parts.legs,arms=m.userData.parts.arms;
+ if(c<=0){m.position.set(q[0]+px*.9+fx*2,1.4+b.position.y,q[1]+pz*.9+fz*2);m.rotation.y=h+Math.PI/2;legs.forEach(l=>l.rotation.z=0);arms.forEach(a=>a.rotation.z=0);return;}
+ // Climbing: from the launch deck (1.4 m) to the ship's deck (3.6 m), facing the hull, hands and feet alternating.
+ m.position.set(lx+px*.32,1.2+2.3*c,lz+pz*.32);m.rotation.y=h+Math.PI/2;const sw=Math.sin(c*40);
+ arms.forEach((a,i)=>a.rotation.z=2.6+(i?sw:-sw)*.3);legs.forEach((l,i)=>l.rotation.z=.5+(i?-sw:sw)*.35);}
 // Street view ("pegman", as on web maps): drag the little yellow man onto the scene, or tap him, to stand there at eye
 // height; drag to look round, walk with the arrow keys / WASD or the on-screen pad, tap the ground to walk there, Esc or
 // the cross to go back to the orbit view. Walls, containers, vehicles, fences and the water's edge stop him: the
@@ -56056,7 +56107,7 @@ STREET=(()=>{const EYE=3.05,R=.45,WALK=5.5,RUN=11,TURN=1.7,CELL=12,_m=new T.Matr
 
 STREET.collect([model.khibula,model.dockCrew.group,...model.football.group.children.filter(c=>c.userData.kind==='pedestrian'),model.football.ball,...model.buoys.map(b=>b.group),model.twistlocks,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);
 // Phones cannot carry a few thousand draw calls, so the static scenery is merged per material there.
-if(!detailed)try{PotiModels.mergeStatic(model.root,[...(model.root.userData.seedEaters||[]).map(e=>e.p),model.khibula,model.dockCrew.group,model.football.group,...model.buoys.map(b=>b.group),model.twistlocks,...model.palms,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.cranes.map(c=>c.group),...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);for(const [obj,keep] of [[model.moored,Object.values(model.cargo)],[model.moving,[]],...model.tugs.map(t=>[t,[]]),...model.trucks.flatMap(t=>[[t.truck,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]]),...model.tractors.flatMap(t=>[[t.tractor,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]])])PotiModels.mergeStatic(obj,keep,obj);
+if(!detailed)try{PotiModels.mergeStatic(model.root,[pilotRig.boat,...(model.root.userData.seedEaters||[]).map(e=>e.p),model.khibula,model.dockCrew.group,model.football.group,...model.buoys.map(b=>b.group),model.twistlocks,...model.palms,...model.walkers,model.supervisor,model.moored,model.moving,model.dredger,...model.cranes.map(c=>c.group),...model.tractors.flatMap(t=>[t.tractor,t.trailer]),...model.trucks.flatMap(t=>[t.truck,t.trailer]),...model.tugs,...model.towLines,...model.stackers,model.tanker]);for(const [obj,keep] of [[model.moored,Object.values(model.cargo)],[model.moving,[]],...model.tugs.map(t=>[t,[]]),...model.trucks.flatMap(t=>[[t.truck,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]]),...model.tractors.flatMap(t=>[[t.tractor,[]],[t.trailer,[t.load,...(t.trailer.userData.twistlocks||[])]]])])PotiModels.mergeStatic(obj,keep,obj);
  for(const c of model.cranes)PotiModels.mergeParts(c.group,[c.carry]);
  for(const u of model.stackers)PotiModels.mergeParts(u,[u.userData.rs.carry]);}catch(e){console.warn('merge skipped',e);}
 const waterMaterial=new T.ShaderMaterial({fog:true,uniforms:T.UniformsUtils.merge([T.UniformsLib.fog,{uTime:{value:0},uWave:{value:.7},uNight:{value:0},uWind:{value:8},uWindDir:{value:new T.Vector2(1,0)}}]),vertexShader:`uniform float uTime;uniform float uWave;uniform float uWind;uniform vec2 uWindDir;varying vec3 vWorld;varying vec3 vNormal;
@@ -56225,7 +56276,7 @@ function updateModel(){for(const f of shipFlags){const p=f.geometry.attributes.p
  model.moored.position.y=Math.sin(t*.5)*sea*.07;model.moored.rotation.x=Math.sin(t*.4)*sea*.006;model.moored.rotation.z=Math.sin(t*.46+1)*sea*.004;
  if(model.dredger){const mooredSea=Math.min(sea,.7);model.dredger.position.y=Math.sin(t*.8+.6)*mooredSea*.2;model.dredger.rotation.z=Math.sin(t*.7)*mooredSea*.03;model.dredger.rotation.x=Math.sin(t*.95)*mooredSea*.022;}
  if(model.khibula){const k=model.khibula;k.position.y=Math.sin(t*.55+.8)*Math.min(sea,1.5)*.12;k.rotation.z=Math.sin(t*.5)*Math.min(sea,1.5)*.012;k.rotation.x=Math.sin(t*.62+1)*Math.min(sea,1.5)*.008;}
- if(model.tanker){model.tanker.position.y=Math.sin(t*.45+2)*sea*.05;model.tanker.rotation.z=Math.sin(t*.5+2)*sea*.004;}updateYard();updateWalkers(motion.time);updateGate(simDt);updateTugs(t);moorings.update();if(model.dockCrew)model.dockCrew.update(t);if(model.football)model.football.update(t);
+ if(model.tanker){model.tanker.position.y=Math.sin(t*.45+2)*sea*.05;model.tanker.rotation.z=Math.sin(t*.5+2)*sea*.004;}updateYard();updateWalkers(motion.time);updateGate(simDt);updateTugs(t);moorings.update();if(model.dockCrew)model.dockCrew.update(t);if(model.football)model.football.update(t);updatePilot(t);
  const benchRain=(Number(weather.precip)||0)>0;
  for(const e of model.root.userData.seedEaters||[]){const um=e.p.userData.parts.umbrella;
   // In the rain the one on the right opens an umbrella over both of them (held in the hand on the partner's side, so he
@@ -56256,15 +56307,22 @@ const moorings=(()=>{const st=[[-53,5.5],[-49,7.5],[-38,8],[22,8],[36,7.3],[44,4
 // Visual density is deliberately illustrative; visibility_km matches the displayed metric.
 const clearDay=new T.Color('#8daab3'),mistDay=new T.Color('#b7c6c7'),clearNight=new T.Color('#101b2b'),mistNight=new T.Color('#344751');
 let fogTarget=.0016;
+// Low fog banks drifting over the port and the water, thickening as visibility drops.
+const fogBanks=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const q=c.getContext('2d'),gr=q.createRadialGradient(64,64,4,64,64,63);gr.addColorStop(0,'rgba(255,255,255,.9)');gr.addColorStop(.5,'rgba(255,255,255,.45)');gr.addColorStop(1,'rgba(255,255,255,0)');q.fillStyle=gr;q.fillRect(0,0,128,128);
+ const tex=new T.CanvasTexture(c),list=[];let seed=5;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+ for(let i=0;i<46;i++){const m=new T.SpriteMaterial({map:tex,transparent:true,opacity:0,depthWrite:false,color:'#dfe5e6'});const sp=new T.Sprite(m);const k=60+rnd()*70;sp.scale.set(k,k*.38,1);sp.position.set(-160+rnd()*420,3+rnd()*9,-260+rnd()*420);sp.visible=false;sp.userData.ph=rnd()*6;scene.add(sp);list.push(sp);}
+ let level=0;return (dt,strength)=>{level+=(Math.max(0,strength-.45)/.55-level)*Math.min(1,dt*1.5);const on=level>.02;const dir=(Number(weather.dir)||0)*Math.PI/180,w=Math.max(1,Number(weather.wind)||0)*.12;
+  for(const sp of list){sp.visible=on;if(!on)continue;sp.material.opacity=Math.min(.55,level*.6)*(.75+.25*Math.sin(motion.time*.1+sp.userData.ph));sp.material.color.set(night?'#4a5560':'#dfe5e6');
+   sp.position.x-=Math.sin(dir)*w*dt;sp.position.z+=Math.cos(dir)*w*dt;if(sp.position.x<-180)sp.position.x+=440;if(sp.position.x>260)sp.position.x-=440;if(sp.position.z<-280)sp.position.z+=440;if(sp.position.z>160)sp.position.z-=440;}};})();
 function updateAtmosphere(dt){
  const known=typeof weather.vis==='number'&&Number.isFinite(weather.vis)&&weather.vis>=0;
  const strength=known?1-clamp(weather.vis,0,1):0;
- fogTarget=.0016+.0035*strength*strength+(known?.002*(1-clamp(weather.vis/.12,0,1)):0);
+ fogTarget=known?clamp(.6/(Math.max(weather.vis,.01)*1000),.0016,.022):.0016;
  const blend=1-Math.exp(-dt*5);
  scene.fog.density+=(fogTarget-scene.fog.density)*blend;
  const tint=clamp((scene.fog.density-.0016)/.0055,0,1);
  scene.fog.color.copy(night?clearNight:clearDay).lerp(night?mistNight:mistDay,tint);
- scene.background.copy(scene.fog.color);
+ scene.background.copy(scene.fog.color);fogBanks(dt,strength);
  sun.intensity=(night?.89775:3)*(1-tint*.55);
  $('fog-state').textContent=!known?'ნისლი: ხილვადობა უცნობია':weather.vis>=1?'ნისლი: სუფთა ხედი':weather.vis>.3?'ნისლი: მსუბუქი':weather.vis>.12?'ნისლი: შესქელებული':'ნისლი: მკვრივი';
 }
@@ -56313,7 +56371,7 @@ function pauseLabel(){$('pause').textContent=paused?'გაგრძელებ
 // first touch), one-click scenarios (windy night, fog, ship arrival) and camera views matching the Berth 12 CCTV cameras.
 const PRESENT=(()=>{const bar=document.createElement('div');bar.id='present-bar';
  bar.innerHTML='<button type="button" id="tour-btn">▶ ტური</button><button type="button" data-scn="wind">ქარიანი ღამე</button><button type="button" data-scn="fog">ნისლი</button><button type="button" data-scn="ship">გემის მიღება</button>'+
-  '<select id="cctv-view" aria-label="CCTV კამერის ხედი"><option value="">CCTV ხედი…</option><option value="12-1">Berth 12 _ 1</option><option value="12-2">Berth 12 _ 2</option><option value="12-8">Berth 12-8</option></select>';
+  '<select id="cctv-view" aria-label="CCTV კამერის ხედი"><option value="">CCTV ხედი…</option><option value="12-1">Berth 12 _ 1</option><option value="12-2">Berth 12 _ 2</option><option value="12-8">Berth 12-8</option><option value="m-b14">Mast · Berth 14</option><option value="m-b12">Mast · Berth 12</option><option value="m-rs">Mast · Reach stackers</option><option value="m-gate">Mast · Gate 1</option><option value="m-yard">Mast · Container Yard</option><option value="m-b15">Mast · B15 / rail</option><option value="m-sea">Mast · Fairway</option></select>';
  const speed=document.getElementById('speed-bar');speed.after(bar);
  const cap=document.createElement('div');cap.id='tour-caption';document.getElementById('app').append(cap);
  const osd=document.createElement('div');osd.id='cctv-osd';document.getElementById('app').append(osd);
@@ -56371,8 +56429,13 @@ const PRESENT=(()=>{const bar=document.createElement('div');bar.id='present-bar'
    {start:()=>say('ბალკერი ნავმისადგომ 12-ზეა; ბუქსირები ეხსნებიან'),cam:[-.4,.42,110,-20,4,-12],d:10}],end:()=>setSpeed(sp)};}};
  // CCTV views: camera height and direction after the Berth 12 cameras, wide lens, timestamp overlay.
  const CCTV={'12-1':[1.546,.19,80,120,0,40],'12-2':[-1.457,.38,38,125,0,40],'12-8':[1.31,.45,32,-60,0,52]};
+ // Cameras on the high masts (28 m up): [mast x, z, look-at x, z]. Each also gets a small camera body on its mast.
+ const MASTCAMS={'m-b14':[-64,64.1,5,55],'m-b12':[-62,5.2,-25,-8],'m-rs':[12,31,40,40],'m-gate':[63,26,100,55],'m-yard':[239,38,140,40],'m-b15':[77,76,40,62],'m-sea':[-62,5.2,-10,-160]};
+ {const {box}=PotiModels.kit;for(const [k,[mx,mz,tx,tz]] of Object.entries(MASTCAMS)){const a=Math.atan2(-(tz-mz),tx-mx),g=new T.Group();g.name='CCTV '+k;g.position.set(mx+Math.cos(a)*.9,27.6,mz-Math.sin(a)*.9);g.rotation.y=a;scene.add(g);
+   box(g,0,.3,0,.3,.5,.3,'#6c7478');box(g,.45,0,0,.75,.3,.32,'#e9ecec');box(g,.6,.2,0,.95,.06,.42,'#d3d8d8');box(g,.84,0,0,.04,.2,.22,'#16222a');
+   /* Eye sits on the camera body, 2.2 m out from the mast, so the mast's own lamps stay behind it. */const ex=mx+Math.cos(a)*2.2,ez=mz-Math.sin(a)*2.2,dx=ex-tx,dz=ez-tz,h=Math.hypot(dx,dz),d=Math.hypot(h,27.6);CCTV[k]=[Math.atan2(dx,-dz),Math.asin(27.6/d),d,tx,0,tz];}}
  $('cctv-view').onchange=e=>{const v=e.target.value;stop();if(!v){setFov(baseFov);osd.classList.remove('on');return;}if(STREET&&STREET.on)STREET.exit();
-  const c=CCTV[v];yaw=c[0];pitch=c[1];distance=c[2];target.set(c[3],c[4],c[5]);setFov(72);updateCamera();osd.dataset.cam='Berth '+v;osd.classList.add('on');};
+  const c=CCTV[v];yaw=c[0];pitch=c[1];distance=v.startsWith('m-')?c[2]/Math.max(1,1.25/camera.aspect):c[2];/* mast eyes must land on the mast whatever the screen shape */target.set(c[3],c[4],c[5]);setFov(72);updateCamera();osd.dataset.cam=v.startsWith('m-')?e.target.selectedOptions[0].textContent:'Berth '+v;osd.classList.add('on');};
  setInterval(()=>{if(!osd.classList.contains('on'))return;const d=new Date(),p=n=>String(n).padStart(2,'0');osd.textContent=osd.dataset.cam+'   '+p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());},500);
  const leaveCctv=()=>{if(osd.classList.contains('on')){osd.classList.remove('on');setFov(baseFov);$('cctv-view').value='';}};
  $('tour-btn').onclick=()=>{if(run&&run.name==='tour'){stop();return;}leaveCctv();play(TOUR(),'tour');};
