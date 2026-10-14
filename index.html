@@ -55494,7 +55494,7 @@ function yardDetails(root){
    if(row===2&&bay>=2&&tier===tiers-1){m.userData.dynamic=true;slots[bay]={mesh:m,x:m.position.x,y:m.position.y,z:m.position.z};}}}
  root.userData.yard={rs,slots};
  // Yellow-and-black barriers guarding the block's west corner, as on the photo.
- for(const z of [29.9,32.1])concreteBarrier(root,95.8,z,Math.PI/2); // clear of the road-edge row at z = 26.9
+ for(const z of [29.6,31.8])concreteBarrier(root,94.1,z,Math.PI/2); // clear of the road-edge row at z = 26.9
  highMast(root,173,35);
  const car=parkedPassengerCar(root,166,81,'#f0f1ed',0);car.name='Toyota Corolla';car.scale.setScalar(1.4);
  box(car,2.325,.64,0,.035,.45,1.25,'#161d23');
