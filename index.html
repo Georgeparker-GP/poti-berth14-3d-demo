@@ -54462,8 +54462,17 @@ function reachStacker(x,z,loaded,bodyColor){const g=new T.Group();g.userData.kin
  for(const [wx,r,zs] of [[-3.6,1.45,[1.7,2.75]],[3.9,1.3,[2.4]]])for(const zz of zs)for(const s of [-1,1]){const w=cylinder(g,wx,r,s*zz,r,.95,tire);w.rotation.x=Math.PI/2;const hub=cylinder(g,wx,r,s*(zz+.49),r*.45,.04,'#3a3f41');hub.rotation.x=Math.PI/2;}
  box(g,-3.6,1.45,0,.9,.9,3,'#2b2f30');
  // Cab with glazing.
- box(g,-1.3,2.95,-1.15,2.7,.3,2.3,black);box(g,-1.3,4.7,-1.15,2.6,3.2,2.2,mat(black,.2,.35));box(g,-1.3,6.35,-1.15,2.9,.25,2.5,black);
- box(g,-2.62,4.9,-1.15,.06,2.3,1.8,mat('#35535a',.4,.15));box(g,-1.3,4.9,-2.27,2.1,2.3,.06,mat('#35535a',.4,.15));
+ // Glazed cab: grey frame and lower panels, light tinted glass all round, and the operator in his seat (hi-vis vest,
+ // white hard hat, hands on the wheel) facing the boom end.
+ {const frame='#4a5155',glass=new T.MeshStandardMaterial({color:'#bfe0e8',metalness:.1,roughness:.08,transparent:true,opacity:.28,depthWrite:false});
+  box(g,-1.3,2.95,-1.15,2.7,.3,2.3,frame);box(g,-1.3,3.55,-1.15,2.62,.9,2.22,'#6b7377');box(g,-1.3,6.35,-1.15,2.9,.25,2.5,frame);
+  for(const x of [-2.57,-.03])for(const z of [-2.22,-.08])box(g,x,4.95,z,.12,2.6,.12,frame);
+  for(const [x,z,w,d] of [[-2.6,-1.15,.04,2.05],[0,-1.15,.04,2.05],[-1.3,-2.24,2.45,.04],[-1.3,-.06,2.45,.04]]){const m=box(g,x,5,z,w,2.5,d,glass);m.castShadow=false;}
+  box(g,-.95,3.95,-1.15,.75,.18,.8,'#2b2f30');box(g,-.6,4.6,-1.15,.16,1.1,.8,'#2b2f30');
+  box(g,-1.15,4.55,-1.15,.5,.85,.62,'#f2c418');box(g,-1.15,4.55,-1.15,.52,.12,.64,'#d9dedf');
+  mesh(g,new T.SphereGeometry(.2,10,8),mat('#d8b08c',0,.7),-1.18,5.2,-1.15);mesh(g,new T.SphereGeometry(.23,10,8,0,Math.PI*2,0,Math.PI/2),mat('#f4f4f0'),-1.18,5.27,-1.15);
+  for(const sd of [-.22,.22])beam(g,[-1.15,4.85,-1.15+sd],[-1.75,4.6,-1.15+sd*.6],.07,'#f2c418');
+  beam(g,[-2,3.9,-1.15],[-1.85,4.55,-1.15],.05,'#2b2f30');const wh=mesh(g,new T.TorusGeometry(.2,.03,6,14),mat('#1b1e1f'),-1.82,4.6,-1.15);wh.rotation.y=Math.PI/2;wh.rotation.x=.5;}
  // Railings, lights and exhaust.
  for(const s of [-1,1]){beam(g,[1,3.9,s*2.1],[3.2,3.9,s*2.1],.05,yellow);for(const bx of [1,2.1,3.2])beam(g,[bx,2.85,s*2.1],[bx,3.9,s*2.1],.05,yellow);}
  cylinder(g,5.5,5.8,1.9,.15,3.6,'#b7bcbc');box(g,-6.1,2.6,1.5,.3,.3,.4,'#f4f1dd');box(g,-6.1,2.6,-1.5,.3,.3,.4,'#f4f1dd');
