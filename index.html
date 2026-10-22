@@ -54499,8 +54499,11 @@ function terminalTractor(number){const g=new T.Group();g.userData.kind='tractor'
  box(g,-.3,1,0,6.4,.45,2.2,'#9aa3a8');
  box(g,2.45,1.35,0,1.9,1.5,2.9,blue);for(let y=.9;y<1.9;y+=.3)box(g,3.42,y,.75,.05,.14,.9,'#16324f');box(g,3.42,1.55,-.7,.05,.25,.9,'#fff6c8');
  box(g,1.9,2.2,0,2.9,.35,2.9,white);
- box(g,1.95,3.45,-.35,2.3,2.2,2.1,white);box(g,1.95,4.62,-.35,2.4,.14,2.2,'#d7dcde');
- box(g,3.11,3.6,-.35,.04,1.4,1.8,glass);box(g,1.95,3.6,-1.41,1.8,1.4,.04,glass);box(g,1.95,3.6,.71,1.8,1.4,.04,glass);
+ // Cab: white lower panel, roof and corner posts; glass all round above the waist, with the driver inside.
+ box(g,1.95,2.65,-.35,2.3,.6,2.1,white);box(g,1.95,4.45,-.35,2.3,.2,2.1,white);box(g,1.95,4.62,-.35,2.4,.14,2.2,'#d7dcde');
+ for(const x of [.86,3.04])for(const z of [-1.34,.64])box(g,x,3.65,z,.12,1.4,.12,white);
+ glassPane(g,3.08,3.65,-.35,.04,1.4,1.9);glassPane(g,.82,3.65,-.35,.04,1.4,1.9);for(const z of [-1.38,.68])glassPane(g,1.95,3.65,z,2.1,1.4,.04);
+ seatedDriver(g,1.85,2.95,-.35,'#f2c418','#f4f4f0');
  box(g,1.95,4.85,-.9,.25,.3,.25,'#f29b1c');
  const sticker=document.createElement('canvas');sticker.width=256;sticker.height=256;const ink=sticker.getContext('2d');ink.fillStyle='#fff9de';ink.fillRect(0,0,256,256);ink.strokeStyle='#263947';ink.lineWidth=10;ink.strokeRect(9,9,238,238);ink.fillStyle='#102c40';ink.font='bold 190px Arial';ink.textAlign='center';ink.textBaseline='middle';ink.fillText(String(number),128,139);const texture=new T.CanvasTexture(sticker);texture.colorSpace=T.SRGBColorSpace;const decal=new T.Mesh(new T.PlaneGeometry(1.65,1.65),new T.MeshStandardMaterial({map:texture,roughness:.8}));decal.rotation.x=-Math.PI/2;decal.position.set(1.95,4.705,-.2);decal.name='TT '+number+' roof number';g.add(decal);
 
@@ -54584,12 +54587,24 @@ function highMast(g,x,z){const c='#8a9296';cylinder(g,x,.3,z,1.3,.6,'#5a6164');
  const flood=new T.PointLight('#fff0d2',200,70,1.3);flood.position.set(x,24,z);flood.visible=false;flood.castShadow=false;g.add(flood);gardenLights.push(flood);const p=new T.Mesh(new T.PlaneGeometry(58,58),poolMat);p.rotation.x=-Math.PI/2;p.position.set(x,.22,z);p.visible=false;p.renderOrder=2;g.add(p);pools.push(p);}
 function setNight(on){apmSigns.forEach(m=>m.emissiveIntensity=on?1.05:.15);cityWindowMaterial.color.set(on?'#e2ba78':'#2a3e48');cityWindowMaterial.emissiveIntensity=on?1.1115:0;beaconMat.emissiveIntensity=on?3:.4;lampHead.emissiveIntensity=on?2.223:0;lampHead.color.set(on?'#fff1c9':'#dfe3e2');pools.forEach(p=>{p.visible=on;if(p.material.userData.baseOpacity===undefined)p.material.userData.baseOpacity=p.material.opacity;p.material.opacity=p.material.userData.baseOpacity*.855;});glows.forEach(sp=>{sp.visible=on;if(sp.material.userData.baseOpacity===undefined)sp.material.userData.baseOpacity=sp.material.opacity;sp.material.opacity=sp.material.userData.baseOpacity*.855;});gardenLights.forEach(light=>{if(light.userData.basePower===undefined)light.userData.basePower=light.intensity;light.intensity=light.userData.basePower*.855;light.visible=on;});}
 // Road tractor after the Scania photo (cab colour varies). Local forward +x, fifth wheel at x = -1.6.
+// Shared cab glazing and a seated driver (hips at y, facing local +x, hands on the wheel), so cab interiors read as manned.
+const cabGlass=new T.MeshStandardMaterial({color:'#bfe0e8',metalness:.1,roughness:.08,transparent:true,opacity:.3,depthWrite:false});
+function glassPane(g,x,y,z,w,h,d){const m=box(g,x,y,z,w,h,d,cabGlass);m.castShadow=false;return m;}
+function seatedDriver(g,x,y,z,shirt='#f2c418',hat){box(g,x-.15,y-.1,z,.7,.16,.66,'#2b2f30');box(g,x-.45,y+.45,z,.14,1,.66,'#2b2f30');
+ box(g,x-.15,y+.45,z,.42,.75,.55,shirt);box(g,x-.15,y+.45,z,.44,.1,.57,'#d9dedf');
+ mesh(g,new T.SphereGeometry(.18,10,8),mat('#d8b08c',0,.7),x-.12,y+1.02,z);if(hat)mesh(g,new T.SphereGeometry(.2,10,8,0,Math.PI*2,0,Math.PI/2),mat(hat),x-.12,y+1.08,z);
+ for(const sd of [-.2,.2])beam(g,[x-.1,y+.7,z+sd],[x+.45,y+.5,z+sd*.6],.06,shirt);
+ const wh=mesh(g,new T.TorusGeometry(.19,.03,6,14),mat('#1b1e1f'),x+.5,y+.55,z);wh.rotation.y=Math.PI/2;wh.rotation.z=.5;beam(g,[x+.5,y+.55,z],[x+.8,y+.1,z],.04,'#2b2f30');}
 function roadTruck(color){const g=new T.Group();g.userData.kind='truck';const dark='#22272a',tire='#141719';
  box(g,-.3,1.05,0,7,.45,1.9,'#30363a');
- box(g,2.55,3.05,0,2.1,3,2.55,color);box(g,2.35,4.85,0,2.4,.7,2.45,color);box(g,3.62,3.95,0,.06,1.25,2.2,mat('#1f3440',.4,.15));
+ // Cab: solid below the waist (y 3.3), glazed above it on the front and both sides, so the driver shows.
+ box(g,2.55,2.425,0,2.1,1.75,2.55,color);box(g,2.35,4.85,0,2.4,.7,2.45,color);box(g,1.6,3.9,0,.2,1.2,2.55,color);
+ for(const x of [1.75,3.52])for(const z of [-1.2,1.2])box(g,x,3.9,z,.14,1.2,.14,color);
+ glassPane(g,3.58,3.9,0,.04,1.2,2.3);for(const z of [-1.26,1.26])glassPane(g,2.63,3.9,z,1.7,1.2,.04);
+ seatedDriver(g,2.5,3.35,-.55,'#3b5d7a');
  box(g,3.62,2.25,0,.12,1.3,2.3,dark);for(let y=1.75;y<2.8;y+=.28)box(g,3.7,y,0,.04,.08,1.6,'#6c7478');box(g,3.72,4.72,0,.1,.18,2.3,dark);
  box(g,3.65,1.15,0,.4,.7,2.6,dark);for(const z of [-.95,.95])box(g,3.82,1.55,z,.05,.22,.5,'#f3f0d8');
- for(const z of [-1.4,1.4]){beam(g,[3.3,4.1,z*.9],[3.75,4.1,z*1.05],.04,dark);box(g,3.8,3.6,z*1.08,.12,.9,.2,dark);box(g,2.2,2.5,z*.99,.9,.9,.1,dark);}
+ for(const z of [-1.4,1.4]){beam(g,[3.3,4.1,z*.9],[3.75,4.1,z*1.05],.04,dark);box(g,3.8,3.6,z*1.08,.12,.9,.2,dark);}
  box(g,.95,2.2,0,.5,1.8,2.2,'#434a4f');const tank=cylinder(g,.2,1.2,-1.05,.45,1.4,'#b9c0c3');tank.rotation.z=Math.PI/2;
  cylinder(g,-1.6,1.4,0,.75,.15,'#2b2f31');
  for(const [wx,r] of [[2.4,.62],[-1.8,.62]])for(const z of [-1.05,1.05]){const w=cylinder(g,wx,r,z,r,.5,tire);w.rotation.x=Math.PI/2;const hb=cylinder(g,wx,r,z*1.25,r*.45,.03,'#b8bec1');hb.rotation.x=Math.PI/2;}
