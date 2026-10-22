@@ -55124,9 +55124,10 @@ function pilotBoat(g,x,z,rot){const P=new T.Group();P.position.set(x,0,z);P.rota
  beam(P,[-1.2,4.2,0],[-1.2,5.6,0],.09,'#d5d9da');box(P,-1.2,5.7,0,.5,.12,1.6,'#2b2f31');beam(P,[-.4,4.3,.9],[-.4,6.6,.9],.03,'#2b2f31');
  for(const sd of [-1,1]){const ring=mesh(P,new T.TorusGeometry(.34,.11,6,12),mat('#e2622c'),1.4,2.6,sd*1.62);ring.rotation.y=Math.PI/2;}
  for(const sd of [-1,1]){beam(P,[5.6,2.6,sd*.6],[3.4,2.6,sd*1.5],.05,'#d5d9da');for(const bx of [3.6,4.6,5.4])beam(P,[bx,1.85,sd*(bx>5?.8:1.4)],[bx,2.6,sd*(bx>5?.8:1.4)],.05,'#d5d9da');}
- const c=document.createElement('canvas');c.width=512;c.height=128;const q=c.getContext('2d');q.font='bold 88px sans-serif';q.textAlign='center';q.fillStyle='#14181b';q.fillText('PILOT',256,100);
+ const c=document.createElement('canvas');c.width=512;c.height=128;const q=c.getContext('2d');q.font='bold 96px sans-serif';q.textAlign='center';q.fillStyle='#ffffff';q.fillText('PILOT',256,100);
  const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;
- for(const sd of [-1,1]){const m=mesh(P,new T.PlaneGeometry(4,1),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),-1.4,2.9,sd*1.56);if(sd<0)m.rotation.y=Math.PI;}
+ // Big white PILOT on both hull sides below the sheer line, as on real pilot launches (clear of the wheelhouse windows).
+ for(const sd of [-1,1]){const m=mesh(P,new T.PlaneGeometry(3.6,.9),new T.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),-.9,1.12,sd*2.1);if(sd<0)m.rotation.y=Math.PI;m.rotation.x=sd*-.06;}
  return P;}
 // Berth supervisor: yellow hi-vis vest, white helmet, radio in hand. Walks his own patrol circle.
 function berthSupervisor(){const g=new T.Group();g.userData.kind='supervisor';
