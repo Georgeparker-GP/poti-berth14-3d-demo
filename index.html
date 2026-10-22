@@ -54630,13 +54630,19 @@ function breakwater(root,pts,opt={}){const cap=opt.cap!==false,beacon=opt.beacon
 function tanker(name){const g=new T.Group();g.userData.kind='tanker';safetyLettering(g,-38.47,11.5,14.7,11.5);
  const hull=mesh(g,hullGeometry(),mat('#e0592b',.3,.5));hull.material.side=T.DoubleSide;
  const lower=mesh(g,hullGeometry(),mat('#7a2c24',.15,.85));lower.scale.set(.997,.3,.997);lower.position.y=-.85;
- box(g,-4,6.95,0,86,.2,14.6,'#8c4632');
+ box(g,-4.5,6.95,0,81,.2,14.6,'#8c4632');
  for(const z of [-2.2,-.8,.8,2.2])beam(g,[-34,7.6,z],[38,7.6,z],.18,'#b9b9b0');for(let x=-32;x<38;x+=6)box(g,x,7.2,0,.3,1,6,'#7d3a2b');
  box(g,2,7.3,0,72,.25,1.4,'#c9c1b5');
  for(let x=-30;x<36;x+=4.5)for(const z of [-5.5,5.5]){box(g,x,7.1,z,2.4,.9,1.8,'#9a4a35');}
  for(const z of [-3.5,3.5]){beam(g,[2,6.8,z],[2,11.5,z],.25,'#e0592b');beam(g,[2,11.5,z],[-4,9.5,z*1.6],.14,'#e0592b');}
  for(const x of [-6,8])for(const z of [-6.2,6.2])box(g,x,7.6,z,3,.9,1.2,'#d8d4c8');
- beam(g,[40,6.8,0],[40,17,0],.25,'#e0592b');beam(g,[38.5,14,0],[41.5,14,0],.1,'#e0592b');box(g,44,7.6,0,6,1.4,9,'#8c4632');
+ beam(g,[40,6.8,0],[40,17,0],.25,'#e0592b');beam(g,[38.5,14,0],[41.5,14,0],.1,'#e0592b');// Forecastle: a raised deck that follows the bow's own taper (hull half-widths 7.3 at x = 36, 4.7 at 44, 0.2 at 50), so it
+ // never overhangs the hull's sides; the main deck runs up to it.
+ {const hw=x=>x<=36?7.3:x<=44?7.3-(x-36)/8*2.6:4.7-(x-44)/6*4.5,xs=[36,38,40,42,44,46,48,49.6],sh=new T.Shape();
+  sh.moveTo(xs[0],-hw(xs[0])*.98);for(const x of xs.slice(1))sh.lineTo(x,-hw(x)*.98);for(const x of xs.slice().reverse())sh.lineTo(x,hw(x)*.98);
+  const fc=new T.Mesh(new T.ExtrudeGeometry(sh,{depth:1.5,bevelEnabled:false}),mat('#8c4632'));fc.rotation.x=Math.PI/2;fc.position.y=8.35;g.add(fc);
+  const rail=new T.Mesh(new T.ExtrudeGeometry(sh,{depth:.12,bevelEnabled:false}),mat('#a0503a'));rail.rotation.x=Math.PI/2;rail.position.y=8.42;rail.scale.set(1,1,1);g.add(rail);
+  box(g,36.05,7.6,0,.12,1.5,14.2,'#7d3a2b');}
  box(g,-43,12,0,9,10,13,'#f1f1ec');box(g,-42.5,17.9,0,8,1.8,17,'#f1f1ec');box(g,-42.5,19,0,8.6,.3,17.6,'#d4d6d0');
  for(let y=9;y<17;y+=2.5)for(const z of [-6.55,6.55])for(let x=-46;x<-40;x+=1.6)box(g,x,y,z,.8,.8,.08,'#2a3e48');
  for(let z=-7.5;z<8;z+=1.4)box(g,-38.4,18,z,.08,.9,1,'#2a3e48');
