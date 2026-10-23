@@ -54595,7 +54595,12 @@ function seatedDriver(g,x,y,z,shirt='#f2c418',hat){box(g,x-.15,y-.1,z,.7,.16,.66
  mesh(g,new T.SphereGeometry(.18,10,8),mat('#d8b08c',0,.7),x-.12,y+1.02,z);if(hat)mesh(g,new T.SphereGeometry(.2,10,8,0,Math.PI*2,0,Math.PI/2),mat(hat),x-.12,y+1.08,z);
  for(const sd of [-.2,.2])beam(g,[x-.1,y+.7,z+sd],[x+.45,y+.5,z+sd*.6],.06,shirt);
  const wh=mesh(g,new T.TorusGeometry(.19,.03,6,14),mat('#1b1e1f'),x+.5,y+.55,z);wh.rotation.y=Math.PI/2;wh.rotation.z=.5;beam(g,[x+.5,y+.55,z],[x+.8,y+.1,z],.04,'#2b2f30');}
-function roadTruck(color){const g=new T.Group();g.userData.kind='truck';const dark='#22272a',tire='#141719';
+// Fleet number sticker (white plate, dark border and digits), used on the truck doors and cab roof.
+function fleetSticker(text){const c=document.createElement('canvas');c.width=256;c.height=160;const q=c.getContext('2d');q.fillStyle='#fffdf2';q.fillRect(0,0,256,160);q.strokeStyle='#1b2a36';q.lineWidth=10;q.strokeRect(6,6,244,148);
+ q.fillStyle='#102c40';q.font='bold 112px Arial';q.textAlign='center';q.textBaseline='middle';q.fillText(text,128,86);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=4;return new T.MeshStandardMaterial({map:t,roughness:.6});}
+function roadTruck(color,number){const g=new T.Group();g.userData.kind='truck';const dark='#22272a',tire='#141719';
+ if(number){const st=fleetSticker(String(number));for(const sd of [-1,1]){const m=mesh(g,new T.PlaneGeometry(1.05,.66),st,2.55,2.55,sd*1.282);if(sd<0)m.rotation.y=Math.PI;m.castShadow=false;}
+  const r=mesh(g,new T.PlaneGeometry(1.6,.95),st,1.72,5.205,0);/* behind the roof beacons at x = 2.4 */r.rotation.x=-Math.PI/2;r.rotation.z=-Math.PI/2;r.castShadow=false;}
  box(g,-.3,1.05,0,7,.45,1.9,'#30363a');
  // Cab: solid below the waist (y 3.3), glazed above it on the front and both sides, so the driver shows.
  box(g,2.55,2.425,0,2.1,1.75,2.55,color);box(g,2.35,4.85,0,2.4,.7,2.45,color);box(g,1.6,3.9,0,.2,1.2,2.55,color);
@@ -55590,9 +55595,9 @@ function build(){const root=new T.Group();root.name='Poti reference model';const
  const walkers=[['#c0392b','#2c3e50','#3b2a20'],['#2e86c1','#34495e','#1c1c1c'],['#f1c40f','#4a4a4a','#6b4a2b'],['#27ae60','#2c3e50','#2a2a2a'],['#8e44ad','#555b61','#8a6a3a'],['#e67e22','#1f2d3a','#1c1c1c'],['#ecf0f1','#3d4f63','#4a3222']].map(([a,b,c])=>{const p=pedestrian(a,b,c);root.add(p);return p;});
  // Reach stackers face each other across the tractor lane (x = 29.7).
  const stackers=[[20,Math.PI],[60,0]].map(([x,r])=>{const u=reachStacker(x,38,false);u.rotation.y=r;root.add(u);return u;});
- const truckColors=['#eef0f0','#b8302c','#1f4f9c','#e07a1f','#2f7d4a','#5b6672','#d9b32a','#8e44ad','#16a085','#34495e'];
+ const FLEET=[101,245,731,318,456,592,867,124,903,677,288,514];const truckColors=['#eef0f0','#b8302c','#1f4f9c','#e07a1f','#2f7d4a','#5b6672','#d9b32a','#8e44ad','#16a085','#34495e'];
  const truckCount=(root.PotiOps&&root.PotiOps.TRUCK&&root.PotiOps.TRUCK.count)||truckColors.length;
- const trucks=Array.from({length:truckCount},(_,i)=>truckColors[i%truckColors.length]).map(c=>{const truck=roadTruck(c),tr=semiTrailer();root.add(truck);root.add(tr);return {truck,trailer:tr,load:tr.userData.load};});
+ const trucks=Array.from({length:truckCount},(_,i)=>truckColors[i%truckColors.length]).map((c,i)=>{const truck=roadTruck(c,FLEET[i%FLEET.length]),tr=semiTrailer();root.add(truck);root.add(tr);return {truck,trailer:tr,load:tr.userData.load};});
  label(root,'BERTH 14',8,1,63.1,21,'#294c50');label(root,'BERTH 13',-64.5,1,26,17,'#294c50');label(root,'BERTH 12',8,1.2,5.1,17,'#294c50');label(root,'B15',77,1.2,98,15,'#294c50');
  const moored=vessel('#3fa9da',1,'maersk');moored.position.set(-8,0,80.1+PIER.north);root.add(moored);
  const moving=bulkVessel(.51);root.add(moving);const dredge=dredger();root.add(dredge);
